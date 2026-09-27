@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>秋祭り屋台巡行 警備シミュレーションシステム</title>
+  <style>
+    :root {
+      --primary: #c53030;
+      --primary-dark: #9b2c2c;
+      --primary-light: #fff5f5;
+      --accent: #d69e2e;
+      --dark: #2d3748;
+      --gray: #718096;
+      --light-gray: #edf2f7;
+      --border: #e2e8f0;
+      --white: #ffffff;
+      --warning: #dd6b20;
+      --danger: #e53e3e;
+      --success: #38a169;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: #f7fafc;
+      color: var(--dark);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ログイン画面 */
+    #login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(135deg, rgba(155, 44, 44, 0.95), rgba(45, 55, 72, 0.95));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 99999;
+    }
+
+    .login-card {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 36px 32px;
+      width: 90%;
+      max-width: 420px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+
+    .login-card h2 {
+      color: var(--primary);
+      margin-bottom: 8px;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .login-card p.subtitle {
+      color: var(--gray);
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      color: var(--dark);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(197, 48, 48, 0.2);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-primary { background-color: var(--primary); color: var(--white); }
+    .btn-primary:hover { background-color: var(--primary-dark); }
+    .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--dark); }
+    .btn-outline:hover { background-color: var(--light-gray); }
+    .btn-danger { background-color: var(--danger); color: var(--white); }
+    .btn-block { width: 100%; }
+
+    .login-error {
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    /* アプリメインヘッダー */
+    header {
+      background-color: var(--white);
+      border-bottom: 1px solid var(--border);
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 17px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .header-title span.badge {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(197, 48, 48, 0.2);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* メインレイアウト */
+    #app-container {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 56px - 70px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* サイドバー */
+    #sidebar {
+      width: 380px;
+      background: var(--white);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+
+    .sidebar-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: #fafafa;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px 8px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: var(--white);
+    }
+
+    .tab-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: none;
+    }
+
+    .tab-content.active { display: block; }
+
+    /* 地図エリア */
+    #map-wrapper {
+      flex: 1;
+      position: relative;
+      background: #e2e8f0;
+    }
+
+    #map { width: 100%; height: 100%; }
+
+    /* 地図上フローティングツールバー */
+    .map-floating-bar {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 30;
+      background: var(--white);
+      padding: 6px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+      display: flex;
+      gap: 6px;
+    }
+
+    .tool-btn {
+      padding: 8px 12px;
+      font-size: 13px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--white);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .tool-btn.active {
+      background: var(--primary);
+      color: var(--white);
+      border-color: var(--primary);
+    }
+
+    /* 下部タイムラインバー */
+    #timeline-bar {
+      height: 70px;
+      background: var(--white);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+      flex-shrink: 0;
+      z-index: 25;
+    }
+
+    .playback-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .time-display {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--primary);
+      min-width: 80px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .slider-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--gray);
+    }
+
+    #time-slider {
+      width: 100%;
+      cursor: pointer;
+      accent-color: var(--primary);
+    }
+
+    .status-summary {
+      background: var(--light-gray);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      min-width: 220px;
+    }
+
+    /* 地点リストカード */
+    .checkpoint-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      transition: all 0.2s;
+    }
+
+    .checkpoint-card:hover {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+      border-color: #cbd5e0;
+    }
+
+    .cp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .cp-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: var(--primary);
+      color: var(--white);
+      border-radius: 50%;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .cp-title {
+      font-weight: bold;
+      font-size: 14px;
+      margin-left: 6px;
+      flex: 1;
+    }
+
+    .cp-meta {
+      font-size: 12px;
+      color: var(--gray);
+      display: flex;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .cp-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .tag {
+      background: #edf2f7;
+      color: #4a5568;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* 懸念点レポート */
+    .report-card {
+      border-left: 4px solid var(--primary);
+      background: var(--primary-light);
+      padding: 12px;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+
+    .report-card.warning { border-left-color: var(--warning); background: #fffaf0; }
+    .report-card.danger { border-left-color: var(--danger); background: #fff5f5; }
+
+    .report-title {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    /* モーダル */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+
+    .modal-content {
+      background: var(--white);
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .modal-header h3 { font-size: 16px; color: var(--primary); }
+    .modal-footer { margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px; }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- 1. 設定項目（APIキー & ログイン情報） -->
+  <!-- ========================================== -->
+  <script>
+    // 【重要】ここに取得したGoogle Maps APIキーを貼り付けてください
+    const GOOGLE_MAPS_API_KEY = "AIzaSyDp1S7rhWlgLnuV0nKXF5pnZe_eyPCY5XI"; 
+
+    // ログイン情報の設定（自由に変更可能です）
+    const AUTH_CONFIG = {
+      defaultId: "shimoteno",         // ログインID
+      defaultPass: "Matsuri20261010"     // パスワード
+    };
+  </script>
+
+  <!-- ========================================== -->
+  <!-- 2. ログイン画面 -->
+  <!-- ========================================== -->
+  <div id="login-overlay">
+    <div class="login-card">
+      <h2>🏮 屋台巡行 警備システム</h2>
+      <p class="subtitle">自治会関係者専用 警備計画・シミュレータ</p>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-id">ログインID</label>
+          <input type="text" id="login-id" class="form-control" placeholder="IDを入力" required value="jichikai">
+        </div>
+        <div class="form-group">
+          <label for="login-pass">パスワード</label>
+          <input type="password" id="login-pass" class="form-control" placeholder="パスワードを入力" required value="matsuri2026">
+        </div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 6px;">
+          <input type="checkbox" id="remember-me" checked>
+          <label for="remember-me" style="margin: 0; font-weight: normal; cursor: pointer;">次回から自動ログイン</label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">ログイン</button>
+        <div id="login-error" class="login-error">IDまたはパスワードが正しくありません</div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. アプリメインヘッダー -->
+  <!-- ========================================== -->
+  <header>
+    <div class="header-title">
+      <span>🏮 秋祭り屋台巡行 警備シミュレーション</span>
+      <span class="badge" id="plan-title-display">自治会警備計画</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" onclick="exportDataJSON()" title="計画データをPCに保存">💾 保存 (JSON)</button>
+      <button class="btn btn-outline" onclick="triggerImportJSON()" title="保存した計画を復元">📂 読込</button>
+      <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importDataJSON(event)">
+      <button class="btn btn-outline" onclick="openApiKeyModal()" title="APIキー変更">⚙️ API設定</button>
+      <button class="btn btn-outline" onclick="logout()" style="color:var(--danger);">🚪 ログアウト</button>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 4. メイン作業エリア -->
+  <!-- ========================================== -->
+  <div id="app-container">
+    <!-- 左側サイドバー -->
+    <div id="sidebar">
+      <div class="sidebar-tabs">
+        <button class="tab-btn active" onclick="switchTab('tab-route', event)">巡行計画</button>
+        <button class="tab-btn" onclick="switchTab('tab-checkpoints', event)">警備地点 (<span id="cp-count">0</span>)</button>
+        <button class="tab-btn" onclick="switchTab('tab-report', event)">懸念点診断</button>
+      </div>
+
+      <!-- タブ1: 巡行計画・ルート設定 -->
+      <div id="tab-route" class="tab-content active">
+        <div class="form-group">
+          <label>巡行計画名</label>
+          <input type="text" id="plan-name" class="form-control" value="本宮 午後巡行警備計画" onchange="updatePlanMeta()">
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div class="form-group" style="flex: 1;">
+            <label>出発予定時刻</label>
+            <input type="time" id="plan-start-time" class="form-control" value="13:00" onchange="updateTimelineSettings()">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>宮入/終了時刻</label>
+            <input type="time" id="plan-end-time" class="form-control" value="17:00" onchange="updateTimelineSettings()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>巡行平均速度 (目安: 1.5〜2.5 km/h)</label>
+          <input type="number" id="plan-speed" class="form-control" value="2.0" step="0.1" min="0.5" max="10" onchange="updateCalculatedStats()">
+        </div>
+
+        <div style="background: var(--light-gray); padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 13px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span>総巡行距離:</span>
+            <strong id="route-distance">0.0 km</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span>予想移動時間:</span>
+            <strong id="route-duration">0分</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>総警備動員数:</span>
+            <strong id="total-guards">0名</strong>
+          </div>
+        </div>
+
+        <div style="margin-top: 16px;">
+          <button class="btn btn-outline btn-block" onclick="clearRoute()" style="color:var(--danger); border-color:var(--border);">
+            🗑️ 巡行ルートを消去
+          </button>
+        </div>
+      </div>
+
+      <!-- タブ2: 警備地点リスト -->
+      <div id="tab-checkpoints" class="tab-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <span style="font-size:12px; color:var(--gray);">地点名や警備員をクリックして編集</span>
+          <button class="btn btn-primary" style="padding:6px 10px; font-size:12px;" onclick="setMode('add_checkpoint')">
+            ➕ 地点を追加
+          </button>
+        </div>
+        <div id="checkpoint-list-container"></div>
+      </div>
+
+      <!-- タブ3: 懸念点診断・出力 -->
+      <div id="tab-report" class="tab-content">
+        <div style="margin-bottom: 12px;">
+          <button class="btn btn-primary btn-block" onclick="runSafetyAudit()">
+            🔍 懸念点・リスクの自動診断を実行
+          </button>
+        </div>
+        <div id="audit-results-container">
+          <p style="font-size:13px; color:var(--gray); text-align:center; padding:20px 0;">
+            「自動診断を実行」を押すと、人員配置の不足、過密移動、狭小路や電線低所などの懸念点を自動検出してコメントを出力します。
+          </p>
+        </div>
+        <div id="audit-actions" style="display:none; margin-top:14px;">
+          <button class="btn btn-outline btn-block" onclick="copyAuditReport()">📋 診断コメントをコピー</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右側マップエリア -->
+    <div id="map-wrapper">
+      <div class="map-floating-bar">
+        <button id="tool-view" class="tool-btn active" onclick="setMode('view')">👆 閲覧・選択</button>
+        <button id="tool-route" class="tool-btn" onclick="setMode('route')">✏️ ルート描画</button>
+        <button id="tool-cp" class="tool-btn" onclick="setMode('add_checkpoint')">📍 警備地点配置</button>
+      </div>
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 5. 下部タイムラインシミュレーター -->
+  <!-- ========================================== -->
+  <div id="timeline-bar">
+    <div class="playback-controls">
+      <button class="btn btn-outline" id="btn-play" onclick="togglePlay()" style="width:40px; height:40px; padding:0;">▶</button>
+      <button class="btn btn-outline" onclick="resetSimulation()" style="width:40px; height:40px; padding:0;">⏮</button>
+      <select id="sim-speed" class="form-control" style="width:80px; height:40px; padding:4px;" onchange="updateSimSpeed()">
+        <option value="1">1倍</option>
+        <option value="5">5倍</option>
+        <option value="15" selected>15倍</option>
+        <option value="60">60倍</option>
+      </select>
+    </div>
+
+    <div class="time-display" id="sim-current-time">13:00</div>
+
+    <div class="slider-container">
+      <div class="slider-labels">
+        <span id="slider-start-label">13:00 (出発)</span>
+        <span id="slider-current-status">屋台待機中</span>
+        <span id="slider-end-label">17:00 (終了)</span>
+      </div>
+      <input type="range" id="time-slider" min="0" max="1000" value="0" oninput="onSliderChange(this.value)">
+    </div>
+
+    <div class="status-summary">
+      <div>現在位置: <strong id="yatai-location-text">出発地点</strong></div>
+      <div style="color:var(--gray); font-size:11px;">警戒中の地点: <span id="active-guard-points" style="color:var(--primary); font-weight:bold;">なし</span></div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 6. 地点編集モーダル -->
+  <!-- ========================================== -->
+  <div class="modal-overlay" id="checkpoint-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">警備地点の編集</h3>
+        <button style="border:none; background:none; font-size:18px; cursor:pointer;" onclick="closeModal('checkpoint-modal')">✕</button>
+      </div>
+      <form id="checkpoint-form" onsubmit="saveCheckpointModal(event)">
+        <input type="hidden" id="modal-cp-id">
+        <div style="display:flex; gap:8px;">
+          <div class="form-group" style="width:80px;">
+            <label>記号</label>
+            <input type="text" id="modal-cp-symbol" class="form-control" required style="text-align:center; font-weight:bold;">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>地点名・交差点名</label>
+            <input type="text" id="modal-cp-name" class="form-control" required placeholder="例: ○○交差点、神社前">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <div class="form-group" style="flex:1;">
+            <label>警備人数 (名)</label>
+            <input type="number" id="modal-cp-guards" class="form-control" min="0" max="50" value="2" required>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>担当班 / 組織</label>
+            <input type="text" id="modal-cp-team" class="form-control" placeholder="例: 第1班、青年部、交通係">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>警戒内容（注意点・リスク）</label>
+          <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px;">
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="addTagToModal('急カーブ')">+ 急カーブ</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="addTagToModal('電線低所')">+ 電線低所</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="addTagToModal('見通し不良')">+ 見通し不良</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="addTagToModal('交通量多')">+ 交通量多</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="addTagToModal('狭小路')">+ 狭小路</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="addTagToModal('段差・勾配')">+ 段差・勾配</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="addTagToModal('観客密集')">+ 観客密集</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 8px;" onclick="addTagToModal('一般車迂回')">+ 一般車迂回</button>
+          </div>
+          <input type="text" id="modal-cp-risk" class="form-control" placeholder="カンマ区切りで入力 (例: 急カーブ, 電線低所)">
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <div class="form-group" style="flex:1;">
+            <label>通過予定時刻</label>
+            <input type="time" id="modal-cp-pass-time" class="form-control">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>警戒待機時間 (通過前後○分)</label>
+            <input type="number" id="modal-cp-margin" class="form-control" value="15" min="5" max="60">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" id="modal-btn-delete" onclick="deleteCheckpointFromModal()" style="margin-right:auto;">削除</button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('checkpoint-modal')">キャンセル</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 7. APIキー設定モーダル -->
+  <!-- ========================================== -->
+  <div class="modal-overlay" id="apikey-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Google Maps APIキー設定</h3>
+        <button style="border:none; background:none; font-size:18px; cursor:pointer;" onclick="closeModal('apikey-modal')">✕</button>
+      </div>
+      <div class="form-group">
+        <label>APIキー</label>
+        <input type="text" id="input-api-key" class="form-control" placeholder="AIzaSy...">
+        <p style="font-size:12px; color:var(--gray); margin-top:6px;">
+          HTMLコード内に直接記述していない場合は、こちらに入力して保存できます（ブラウザに記憶されます）。
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('apikey-modal')">キャンセル</button>
+        <button type="button" class="btn btn-primary" onclick="saveApiKeyAndReload()">保存して再読み込み</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 8. アプリケーション本体スクリプト -->
+  <!-- ========================================== -->
+  <script>
+    let appState = {
+      planName: "本宮 午後巡行警備計画",
+      startTime: "13:00",
+      endTime: "17:00",
+      speedKmh: 2.0,
+      routePoints: [],
+      checkpoints: [],
+      currentMode: "view",
+      simProgress: 0,
+      simPlaying: false,
+      simSpeed: 15
+    };
+
+    let map = null;
+    let routePolyline = null;
+    let checkpointMarkers = [];
+    let yataiMarker = null;
+    let simInterval = null;
+
+    // --- ログイン処理 ---
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const id = document.getElementById('login-id').value.trim();
+      const pass = document.getElementById('login-pass').value.trim();
+      const remember = document.getElementById('remember-me').checked;
+
+      if (id === AUTH_CONFIG.defaultId && pass === AUTH_CONFIG.defaultPass) {
+        if (remember) {
+          localStorage.setItem('yatai_auth', 'true');
+        }
+        document.getElementById('login-overlay').style.display = 'none';
+        initAppAfterLogin();
+      } else {
+        document.getElementById('login-error').style.display = 'block';
+      }
+    });
+
+    function checkAuthOnLoad() {
+      if (localStorage.getItem('yatai_auth') === 'true') {
+        document.getElementById('login-overlay').style.display = 'none';
+        initAppAfterLogin();
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('yatai_auth');
+      location.reload();
+    }
+
+    // --- Google Maps API の動的ロード ---
+    function initAppAfterLogin() {
+      loadSavedData();
+      initGoogleMaps();
+    }
+
+    function getApiKey() {
+      if (typeof GOOGLE_MAPS_API_KEY !== 'undefined' && GOOGLE_MAPS_API_KEY.trim() !== "") {
+        return GOOGLE_MAPS_API_KEY.trim();
+      }
+      return localStorage.getItem('yatai_maps_api_key') || "";
+    }
+
+    function initGoogleMaps() {
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        openApiKeyModal();
+        return;
+      }
+
+      if (window.google && window.google.maps) {
+        setupMapInstance();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&callback=setupMapInstance`;
+      script.async = true;
+      script.defer = true;
+      script.onerror = () => {
+        alert("Google Maps APIの読み込みに失敗しました。APIキーまたはネットワーク設定をご確認ください。");
+        openApiKeyModal();
+      };
+      document.head.appendChild(script);
+    }
+
+    function setupMapInstance() {
+      let centerPos = { lat: 34.8394, lng: 134.6939 }; // 播州・姫路周辺
+      if (appState.routePoints.length > 0) {
+        centerPos = appState.routePoints[0];
+      }
+
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: centerPos,
+        zoom: 16,
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        gestureHandling: 'greedy',
+        fullscreenControl: true,
+        streetViewControl: false
+      });
+
+      routePolyline = new google.maps.Polyline({
+        path: appState.routePoints,
+        geodesic: true,
+        strokeColor: '#C53030',
+        strokeOpacity: 0.8,
+        strokeWeight: 6,
+        map: map
+      });
+
+      const yataiIcon = {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="11" fill="#fff" stroke="#c53030" stroke-width="2"/>
+            <text x="12" y="16" font-size="12" font-weight="bold" text-anchor="middle" fill="#c53030">🏮</text>
+          </svg>
+        `),
+        scaledSize: new google.maps.Size(38, 38),
+        anchor: new google.maps.Point(19, 19)
+      };
+
+      yataiMarker = new google.maps.Marker({
+        position: centerPos,
+        map: map,
+        icon: yataiIcon,
+        title: "屋台現在地",
+        zIndex: 999
+      });
+
+      map.addListener('click', (e) => {
+        if (appState.currentMode === 'route') {
+          addRoutePoint(e.latLng);
+        } else if (appState.currentMode === 'add_checkpoint') {
+          promptAddCheckpoint(e.latLng);
+        }
+      });
+
+      renderCheckpoints();
+      updateCalculatedStats();
+      updateTimelineSettings();
+    }
+
+    function setMode(mode) {
+      appState.currentMode = mode;
+      document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+      if (mode === 'view') document.getElementById('tool-view').classList.add('active');
+      if (mode === 'route') document.getElementById('tool-route').classList.add('active');
+      if (mode === 'add_checkpoint') document.getElementById('tool-cp').classList.add('active');
+    }
+
+    function addRoutePoint(latLng) {
+      const pt = { lat: latLng.lat(), lng: latLng.lng() };
+      appState.routePoints.push(pt);
+      routePolyline.setPath(appState.routePoints);
+      updateCalculatedStats();
+      saveState();
+    }
+
+    function clearRoute() {
+      if (confirm("巡行ルートを消去しますか？（警備地点は残ります）")) {
+        appState.routePoints = [];
+        routePolyline.setPath([]);
+        updateCalculatedStats();
+        saveState();
+      }
+    }
+
+    function getNextSymbol() {
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const used = new Set(appState.checkpoints.map(c => c.symbol));
+      for (let i = 0; i < letters.length; i++) {
+        if (!used.has(letters[i])) return letters[i];
+      }
+      return "P" + (appState.checkpoints.length + 1);
+    }
+
+    function promptAddCheckpoint(latLng) {
+      const nextSym = getNextSymbol();
+      openCheckpointModal({
+        id: "cp_" + Date.now(),
+        symbol: nextSym,
+        name: `地点 ${nextSym}`,
+        lat: latLng.lat(),
+        lng: latLng.lng(),
+        guards: 2,
+        team: "第1班",
+        risk: "交通量多, 見通し不良",
+        passTime: "",
+        margin: 15
+      }, true);
+      setMode('view');
+    }
+
+    function renderCheckpoints() {
+      checkpointMarkers.forEach(m => m.setMap(null));
+      checkpointMarkers = [];
+
+      const container = document.getElementById('checkpoint-list-container');
+      container.innerHTML = "";
+      document.getElementById('cp-count').innerText = appState.checkpoints.length;
+
+      appState.checkpoints.forEach((cp) => {
+        const svgIcon = {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
+              <path d="M16 0C7.16 0 0 7.16 0 16c0 11.5 16 26 16 26s16-14.5 16-26c0-8.84-7.16-16-16-16z" fill="#2B6CB0"/>
+              <circle cx="16" cy="16" r="11" fill="#FFFFFF"/>
+              <text x="16" y="21" font-size="13" font-weight="bold" text-anchor="middle" fill="#2B6CB0">${cp.symbol}</text>
+            </svg>
+          `),
+          scaledSize: new google.maps.Size(32, 42),
+          anchor: new google.maps.Point(16, 42)
+        };
+
+        const marker = new google.maps.Marker({
+          position: { lat: cp.lat, lng: cp.lng },
+          map: map,
+          icon: svgIcon,
+          title: `[${cp.symbol}] ${cp.name}`
+        });
+
+        marker.addListener('click', () => {
+          openCheckpointModal(cp, false);
+        });
+
+        checkpointMarkers.push(marker);
+
+        const card = document.createElement('div');
+        card.className = "checkpoint-card";
+        const tagsHtml = cp.risk ? cp.risk.split(/[,、]/).map(t => `<span class="tag">${t.trim()}</span>`).join("") : "";
+
+        card.innerHTML = `
+          <div class="cp-header">
+            <span class="cp-badge">${cp.symbol}</span>
+            <span class="cp-title">${cp.name}</span>
+            <button class="btn btn-outline" style="padding:2px 8px; font-size:11px;" onclick="openCheckpointModalById('${cp.id}')">編集</button>
+          </div>
+          <div class="cp-meta">
+            <span>警備: <strong>${cp.guards}名</strong></span>
+            <span>担当: <strong>${cp.team || '未定'}</strong></span>
+            <span>通過: <strong>${cp.passTime || '自動'}</strong></span>
+          </div>
+          <div class="cp-tags">${tagsHtml}</div>
+        `;
+        container.appendChild(card);
+      });
+
+      updateCalculatedStats();
+    }
+
+    function openCheckpointModal(cp, isNew) {
+      document.getElementById('modal-cp-id').value = cp.id;
+      document.getElementById('modal-cp-symbol').value = cp.symbol;
+      document.getElementById('modal-cp-name').value = cp.name;
+      document.getElementById('modal-cp-guards').value = cp.guards;
+      document.getElementById('modal-cp-team').value = cp.team || "";
+      document.getElementById('modal-cp-risk').value = cp.risk || "";
+      document.getElementById('modal-cp-pass-time').value = cp.passTime || "";
+      document.getElementById('modal-cp-margin').value = cp.margin || 15;
+
+      document.getElementById('modal-title').innerText = isNew ? "新しい警備地点の追加" : `警備地点 [${cp.symbol}] の編集`;
+      document.getElementById('modal-btn-delete').style.display = isNew ? "none" : "block";
+
+      document.getElementById('checkpoint-modal').dataset.lat = cp.lat;
+      document.getElementById('checkpoint-modal').dataset.lng = cp.lng;
+      document.getElementById('checkpoint-modal').style.display = 'flex';
+    }
+
+    function openCheckpointModalById(id) {
+      const cp = appState.checkpoints.find(c => c.id === id);
+      if (cp) openCheckpointModal(cp, false);
+    }
+
+    function addTagToModal(tag) {
+      const input = document.getElementById('modal-cp-risk');
+      let val = input.value.trim();
+      if (!val) {
+        input.value = tag;
+      } else if (!val.includes(tag)) {
+        input.value = val + ", " + tag;
+      }
+    }
+
+    function saveCheckpointModal(e) {
+      e.preventDefault();
+      const id = document.getElementById('modal-cp-id').value;
+      const symbol = document.getElementById('modal-cp-symbol').value.trim();
+      const name = document.getElementById('modal-cp-name').value.trim();
+      const guards = parseInt(document.getElementById('modal-cp-guards').value, 10) || 0;
+      const team = document.getElementById('modal-cp-team').value.trim();
+      const risk = document.getElementById('modal-cp-risk').value.trim();
+      const passTime = document.getElementById('modal-cp-pass-time').value;
+      const margin = parseInt(document.getElementById('modal-cp-margin').value, 10) || 15;
+
+      const modalEl = document.getElementById('checkpoint-modal');
+      const lat = parseFloat(modalEl.dataset.lat);
+      const lng = parseFloat(modalEl.dataset.lng);
+
+      const existingIndex = appState.checkpoints.findIndex(c => c.id === id);
+      const cpData = { id, symbol, name, lat, lng, guards, team, risk, passTime, margin };
+
+      if (existingIndex >= 0) {
+        appState.checkpoints[existingIndex] = cpData;
+      } else {
+        appState.checkpoints.push(cpData);
+      }
+
+      closeModal('checkpoint-modal');
+      renderCheckpoints();
+      saveState();
+    }
+
+    function deleteCheckpointFromModal() {
+      const id = document.getElementById('modal-cp-id').value;
+      if (confirm("この警備地点を削除しますか？")) {
+        appState.checkpoints = appState.checkpoints.filter(c => c.id !== id);
+        closeModal('checkpoint-modal');
+        renderCheckpoints();
+        saveState();
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    function updateCalculatedStats() {
+      let totalDist = 0;
+      if (window.google && window.google.maps && google.maps.geometry && appState.routePoints.length > 1) {
+        for (let i = 0; i < appState.routePoints.length - 1; i++) {
+          const p1 = new google.maps.LatLng(appState.routePoints[i]);
+          const p2 = new google.maps.LatLng(appState.routePoints[i+1]);
+          totalDist += google.maps.geometry.spherical.computeDistanceBetween(p1, p2);
+        }
+      }
+
+      const distKm = totalDist / 1000;
+      document.getElementById('route-distance').innerText = distKm.toFixed(2) + " km";
+
+      appState.speedKmh = parseFloat(document.getElementById('plan-speed').value) || 2.0;
+      const durationHours = distKm / appState.speedKmh;
+      const durationMins = Math.round(durationHours * 60);
+      document.getElementById('route-duration').innerText = durationMins + "分";
+
+      const totalGuards = appState.checkpoints.reduce((sum, cp) => sum + (cp.guards || 0), 0);
+      document.getElementById('total-guards').innerText = totalGuards + "名";
+    }
+
+    function timeToMinutes(tStr) {
+      const [h, m] = tStr.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function minutesToTime(mins) {
+      const h = Math.floor(mins / 60) % 24;
+      const m = Math.floor(mins % 60);
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    function updateTimelineSettings() {
+      appState.startTime = document.getElementById('plan-start-time').value;
+      appState.endTime = document.getElementById('plan-end-time').value;
+      document.getElementById('slider-start-label').innerText = `${appState.startTime} (出発)`;
+      document.getElementById('slider-end-label').innerText = `${appState.endTime} (終了)`;
+      updateSimulationDisplay();
+    }
+
+    function togglePlay() {
+      appState.simPlaying = !appState.simPlaying;
+      const btn = document.getElementById('btn-play');
+      if (appState.simPlaying) {
+        btn.innerText = "⏸";
+        startSimLoop();
+      } else {
+        btn.innerText = "▶";
+        stopSimLoop();
+      }
+    }
+
+    function startSimLoop() {
+      stopSimLoop();
+      simInterval = setInterval(() => {
+        let nextVal = appState.simProgress + (0.001 * appState.simSpeed);
+        if (nextVal >= 1.0) {
+          nextVal = 1.0;
+          togglePlay();
+        }
+        appState.simProgress = nextVal;
+        document.getElementById('time-slider').value = Math.round(nextVal * 1000);
+        updateSimulationDisplay();
+      }, 100);
+    }
+
+    function stopSimLoop() {
+      if (simInterval) clearInterval(simInterval);
+    }
+
+    function resetSimulation() {
+      if (appState.simPlaying) togglePlay();
+      appState.simProgress = 0;
+      document.getElementById('time-slider').value = 0;
+      updateSimulationDisplay();
+    }
+
+    function updateSimSpeed() {
+      appState.simSpeed = parseFloat(document.getElementById('sim-speed').value);
+    }
+
+    function onSliderChange(val) {
+      appState.simProgress = val / 1000;
+      updateSimulationDisplay();
+    }
+
+    function updateSimulationDisplay() {
+      const startMins = timeToMinutes(appState.startTime);
+      const endMins = timeToMinutes(appState.endTime);
+      const totalMins = endMins > startMins ? endMins - startMins : 240;
+      const curMins = startMins + totalMins * appState.simProgress;
+      const curTimeStr = minutesToTime(curMins);
+
+      document.getElementById('sim-current-time').innerText = curTimeStr;
+
+      if (appState.routePoints.length > 0 && yataiMarker) {
+        const pt = interpolateRoutePosition(appState.simProgress);
+        yataiMarker.setPosition(pt);
+
+        const nearest = findNearestCheckpoint(pt);
+        if (nearest) {
+          document.getElementById('yatai-location-text').innerText = `${nearest.name}付近`;
+        }
+      }
+
+      const activeGuards = [];
+      appState.checkpoints.forEach((cp, idx) => {
+        let isActive = false;
+        if (cp.passTime) {
+          const passM = timeToMinutes(cp.passTime);
+          const margin = cp.margin || 15;
+          if (curMins >= passM - margin && curMins <= passM + margin) {
+            isActive = true;
+          }
+        } else if (appState.routePoints.length > 0 && window.google) {
+          const yPos = yataiMarker.getPosition();
+          const cpPos = new google.maps.LatLng(cp.lat, cp.lng);
+          const dist = google.maps.geometry.spherical.computeDistanceBetween(yPos, cpPos);
+          if (dist < 250) {
+            isActive = true;
+          }
+        }
+
+        const marker = checkpointMarkers[idx];
+        if (marker) {
+          const color = isActive ? "#E53E3E" : "#2B6CB0";
+          const svgIcon = {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
+                <path d="M16 0C7.16 0 0 7.16 0 16c0 11.5 16 26 16 26s16-14.5 16-26c0-8.84-7.16-16-16-16z" fill="${color}"/>
+                <circle cx="16" cy="16" r="11" fill="#FFFFFF"/>
+                <text x="16" y="21" font-size="13" font-weight="bold" text-anchor="middle" fill="${color}">${cp.symbol}</text>
+              </svg>
+            `),
+            scaledSize: new google.maps.Size(32, 42),
+            anchor: new google.maps.Point(16, 42)
+          };
+          marker.setIcon(svgIcon);
+          if (isActive) activeGuards.push(`[${cp.symbol}] ${cp.team || cp.name}`);
+        }
+      });
+
+      document.getElementById('active-guard-points').innerText = activeGuards.length > 0 ? activeGuards.join(", ") : "待機中";
+    }
+
+    function interpolateRoutePosition(prog) {
+      const pts = appState.routePoints;
+      if (pts.length === 1) return pts[0];
+      const targetIndex = (pts.length - 1) * prog;
+      const idx = Math.floor(targetIndex);
+      const remainder = targetIndex - idx;
+
+      if (idx >= pts.length - 1) return pts[pts.length - 1];
+
+      const p1 = pts[idx];
+      const p2 = pts[idx + 1];
+      return {
+        lat: p1.lat + (p2.lat - p1.lat) * remainder,
+        lng: p1.lng + (p2.lng - p1.lng) * remainder
+      };
+    }
+
+    function findNearestCheckpoint(pos) {
+      if (appState.checkpoints.length === 0 || !window.google) return null;
+      let minD = Infinity;
+      let nearest = null;
+      const target = new google.maps.LatLng(pos.lat, pos.lng);
+      appState.checkpoints.forEach(cp => {
+        const d = google.maps.geometry.spherical.computeDistanceBetween(target, new google.maps.LatLng(cp.lat, cp.lng));
+        if (d < minD) {
+          minD = d;
+          nearest = cp;
+        }
+      });
+      return minD < 100 ? nearest : null;
+    }
+
+    // --- 懸念点診断 & レポート作成 ---
+    let lastGeneratedAuditReport = "";
+
+    function runSafetyAudit() {
+      const results = [];
+      const checkpoints = appState.checkpoints;
+
+      if (checkpoints.length === 0) {
+        results.push({
+          type: "danger",
+          title: "警備地点が未登録です",
+          desc: "巡行ルート上に警備地点（交差点・危険箇所など）を登録してください。"
+        });
+      }
+
+      checkpoints.forEach(cp => {
+        const risks = cp.risk || "";
+        const isHighRisk = /交通量|交差点|車|急カーブ|密集|坂|段差/i.test(risks);
+        if (cp.guards <= 0) {
+          results.push({
+            type: "danger",
+            title: `【重大】地点 [${cp.symbol}] (${cp.name}) の警備員が0名です`,
+            desc: "警備員が配置されていません。無人での巡行は危険です。"
+          });
+        } else if (cp.guards === 1 && isHighRisk) {
+          results.push({
+            type: "warning",
+            title: `【人員要検討】地点 [${cp.symbol}] (${cp.name}) の人員不足`,
+            desc: `警戒内容に「${risks}」と指定されていますが、警備員が1名のみです。一般車遮断や安全確保のため、最低2名以上の配置を推奨します。`
+          });
+        }
+      });
+
+      const teamLocations = {};
+      checkpoints.forEach(cp => {
+        if (!cp.team) return;
+        if (!teamLocations[cp.team]) teamLocations[cp.team] = [];
+        teamLocations[cp.team].push(cp);
+      });
+
+      for (const [teamName, points] of Object.entries(teamLocations)) {
+        if (points.length > 1) {
+          results.push({
+            type: "warning",
+            title: `【移動確認】「${teamName}」が複数の地点を担当しています`,
+            desc: `担当地点: ${points.map(p => `[${p.symbol}]${p.name}`).join(" → ")}。屋台の移動に先回りして安全に配置につける移動ルート・時間を確保してください。`
+          });
+        }
+      }
+
+      checkpoints.forEach(cp => {
+        const risks = cp.risk || "";
+        if (/電線/i.test(risks)) {
+          results.push({
+            type: "warning",
+            title: `【高所接触リスク】地点 [${cp.symbol}] (${cp.name})：電線低所`,
+            desc: "屋台・梵天・飾りの接触事故防止のため、高所監視係および持ち上げ用竹竿等の準備状況を事前に確認してください。"
+          });
+        }
+        if (/狭小|狭い|路地/i.test(risks)) {
+          results.push({
+            type: "warning",
+            title: `【家屋・電柱接触リスク】地点 [${cp.symbol}] (${cp.name})：狭小路`,
+            desc: "道幅が狭く家屋の庇や電柱との接触の危険があります。左右の側方誘導員および観客の立ち入り規制を徹底してください。"
+          });
+        }
+        if (/段差|勾配|坂/i.test(risks)) {
+          results.push({
+            type: "warning",
+            title: `【制動・横転リスク】地点 [${cp.symbol}] (${cp.name})：段差・勾配`,
+            desc: "下り坂・段差での屋台暴走を防ぐため、輪止め（梃子・ブレーキ）要員の配置と合図の確認を行ってください。"
+          });
+        }
+      });
+
+      const container = document.getElementById('audit-results-container');
+      container.innerHTML = "";
+
+      let textReport = `【秋祭り屋台巡行 警備計画 懸念点診断レポート】\n`;
+      textReport += `計画名: ${appState.planName}\n`;
+      textReport += `巡行時間: ${appState.startTime} 〜 ${appState.endTime}\n`;
+      textReport += `登録地点数: ${checkpoints.length}箇所 / 総動員数: ${appState.checkpoints.reduce((s,c)=>s+c.guards,0)}名\n`;
+      textReport += `----------------------------------------\n\n`;
+
+      if (results.length === 0) {
+        container.innerHTML = `
+          <div class="report-card" style="border-left-color:var(--success); background:#f0fff4;">
+            <div class="report-title" style="color:var(--success);">✅ 重大な懸念点は検出されませんでした</div>
+            <div>配置人数・リスクへの対策方針は概ね良好です。</div>
+          </div>
+        `;
+        textReport += `特筆すべき重大な懸念点は検出されませんでした。\n`;
+      } else {
+        results.forEach((r, idx) => {
+          const card = document.createElement('div');
+          card.className = `report-card ${r.type}`;
+          card.innerHTML = `
+            <div class="report-title">${r.title}</div>
+            <div>${r.desc}</div>
+          `;
+          container.appendChild(card);
+          textReport += `${idx+1}. ${r.title}\n   ${r.desc}\n\n`;
+        });
+      }
+
+      lastGeneratedAuditReport = textReport;
+      document.getElementById('audit-actions').style.display = 'block';
+    }
+
+    function copyAuditReport() {
+      if (!lastGeneratedAuditReport) return;
+      navigator.clipboard.writeText(lastGeneratedAuditReport).then(() => {
+        alert("診断レポート全文をクリップボードにコピーしました！役員会資料や連絡用に貼り付け可能です。");
+      });
+    }
+
+    function saveState() {
+      localStorage.setItem('yatai_sim_data', JSON.stringify(appState));
+    }
+
+    function loadSavedData() {
+      const saved = localStorage.getItem('yatai_sim_data');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          appState = Object.assign(appState, parsed);
+          document.getElementById('plan-name').value = appState.planName || "";
+          document.getElementById('plan-start-time').value = appState.startTime || "13:00";
+          document.getElementById('plan-end-time').value = appState.endTime || "17:00";
+          document.getElementById('plan-speed').value = appState.speedKmh || 2.0;
+          document.getElementById('plan-title-display').innerText = appState.planName;
+        } catch (e) {
+          console.error("データの読み込みに失敗しました", e);
+        }
+      }
+    }
+
+    function exportDataJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `屋台警備計画_${appState.planName.replace(/\s+/g, '_')}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function triggerImportJSON() {
+      document.getElementById('import-file').click();
+    }
+
+    function importDataJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          appState = Object.assign(appState, imported);
+          saveState();
+          location.reload();
+        } catch (err) {
+          alert("JSONファイルの形式が正しくありません。");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function openApiKeyModal() {
+      document.getElementById('input-api-key').value = getApiKey();
+      document.getElementById('apikey-modal').style.display = 'flex';
+    }
+
+    function saveApiKeyAndReload() {
+      const key = document.getElementById('input-api-key').value.trim();
+      localStorage.setItem('yatai_maps_api_key', key);
+      location.reload();
+    }
+
+    function switchTab(tabId, e) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      e.target.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    function updatePlanMeta() {
+      appState.planName = document.getElementById('plan-name').value;
+      document.getElementById('plan-title-display').innerText = appState.planName;
+      saveState();
+    }
+
+    window.onload = checkAuthOnLoad;
+  </script>
+</body>
+</html>
