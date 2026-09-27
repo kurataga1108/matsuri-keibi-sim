@@ -111,7 +111,7 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 9px 14px;
+      padding: 8px 13px;
       border-radius: 6px;
       border: none;
       cursor: pointer;
@@ -247,6 +247,7 @@
       display: flex;
       gap: 6px;
       align-items: center;
+      flex-wrap: wrap;
     }
 
     .tool-btn {
@@ -274,7 +275,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      margin-left: 8px;
+      margin-left: 6px;
       cursor: pointer;
       color: var(--dark);
       user-select: none;
@@ -332,7 +333,7 @@
       padding: 6px 12px;
       border-radius: 6px;
       font-size: 12px;
-      min-width: 250px;
+      min-width: 270px;
     }
 
     /* 地点リストカード */
@@ -345,9 +346,15 @@
       transition: all 0.2s;
     }
 
-    .checkpoint-card:hover {
-      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-      border-color: #cbd5e0;
+    .checkpoint-card.active-guarding {
+      border: 2px solid var(--danger);
+      background: #fff5f5;
+      box-shadow: 0 0 8px rgba(229, 62, 62, 0.3);
+    }
+
+    .checkpoint-card.past-guarding {
+      opacity: 0.6;
+      background: #f7fafc;
     }
 
     .cp-header {
@@ -369,22 +376,27 @@
       color: #fff;
     }
 
-    .type-pill {
-      font-size: 10px;
-      font-weight: bold;
-      padding: 2px 6px;
-      border-radius: 4px;
-      margin-left: 6px;
-    }
-    .type-guard { background: #fed7d7; color: #9b2c2c; }
-    .type-rest { background: #b2f5ea; color: #234e52; }
-    .type-pass { background: #e2e8f0; color: #4a5568; }
-
     .cp-title {
       font-weight: bold;
       font-size: 13px;
       margin-left: 6px;
       flex: 1;
+    }
+
+    .live-status-pill {
+      font-size: 10px;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-left: 6px;
+    }
+    .status-active { background: #fed7d7; color: #9b2c2c; border: 1px solid #feb2b2; animation: blink 1.2s infinite ease-in-out; }
+    .status-waiting { background: #edf2f7; color: #718096; }
+    .status-ended { background: #e2e8f0; color: #a0aec0; }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
     }
 
     .cp-meta-grid {
@@ -413,6 +425,21 @@
       font-size: 10px;
       padding: 1px 5px;
       border-radius: 3px;
+    }
+
+    /* ルート通過・休憩点リストアイテム */
+    .waypoint-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid var(--rest);
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .waypoint-card.is-pass {
+      border-left-color: var(--pass);
     }
 
     /* 班別タイムライン */
@@ -491,7 +518,7 @@
       background: var(--white);
       border-radius: 10px;
       width: 90%;
-      max-width: 520px;
+      max-width: 500px;
       max-height: 90vh;
       overflow-y: auto;
       padding: 22px;
@@ -509,29 +536,6 @@
 
     .modal-header h3 { font-size: 16px; color: var(--primary); }
     .modal-footer { margin-top: 18px; display: flex; justify-content: flex-end; gap: 8px; }
-
-    .btn-group-toggle {
-      display: flex;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      overflow: hidden;
-      margin-bottom: 12px;
-    }
-    .btn-toggle {
-      flex: 1;
-      padding: 8px 4px;
-      text-align: center;
-      font-size: 12px;
-      background: #fafafa;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      color: var(--gray);
-    }
-    .btn-toggle.active {
-      background: var(--primary);
-      color: #fff;
-    }
   </style>
 </head>
 <body>
@@ -543,8 +547,8 @@
 
     // ログイン情報の設定
     const AUTH_CONFIG = {
-      defaultId: "shimoteno",         // ログインID
-      defaultPass: "Matsuri20261010"     // パスワード
+      defaultId: "shimoteno",
+      defaultPass: "Matsuri20261010"
     };
   </script>
 
@@ -593,7 +597,8 @@
     <div id="sidebar">
       <div class="sidebar-tabs">
         <button class="tab-btn active" onclick="switchTab('tab-route', event)">巡行計画</button>
-        <button class="tab-btn" onclick="switchTab('tab-checkpoints', event)">地点一覧 (<span id="cp-count">0</span>)</button>
+        <button class="tab-btn" onclick="switchTab('tab-checkpoints', event)">警備地点 (<span id="cp-count">0</span>)</button>
+        <button class="tab-btn" onclick="switchTab('tab-waypoints', event)">休憩・通過 (<span id="wp-count">0</span>)</button>
         <button class="tab-btn" onclick="switchTab('tab-teams', event)">班別移動表</button>
         <button class="tab-btn" onclick="switchTab('tab-report', event)">懸念点診断</button>
       </div>
@@ -614,10 +619,6 @@
             <input type="time" id="plan-end-time" class="form-control" value="17:00" onchange="updateTimelineSettings()">
           </div>
         </div>
-        <div class="form-group">
-          <label>巡行平均速度 (目安: 1.5〜2.5 km/h)</label>
-          <input type="number" id="plan-speed" class="form-control" value="2.0" step="0.1" min="0.5" max="10" onchange="updateCalculatedStats()">
-        </div>
 
         <div style="background: var(--light-gray); padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 13px;">
           <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
@@ -629,8 +630,8 @@
             <strong id="total-rest-time">0分</strong>
           </div>
           <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-            <span>警備地点 / 休憩地点:</span>
-            <strong><span id="stat-guard-count">0</span>箇所 / <span id="stat-rest-count">0</span>箇所</strong>
+            <span>警備地点数:</span>
+            <strong id="stat-guard-count">0箇所</strong>
           </div>
           <div style="display:flex; justify-content:space-between;">
             <span>総警備動員数:</span>
@@ -645,22 +646,29 @@
         </div>
       </div>
 
-      <!-- タブ2: 地点一覧（警備・休憩・通過） -->
+      <!-- タブ2: 警備地点一覧 -->
       <div id="tab-checkpoints" class="tab-content">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <div style="display:flex; gap:4px;">
-            <button class="btn btn-outline" style="padding:3px 8px; font-size:11px;" onclick="filterCheckpointList('all')">全表示</button>
-            <button class="btn btn-outline" style="padding:3px 8px; font-size:11px;" onclick="filterCheckpointList('guard')">🛡️警備</button>
-            <button class="btn btn-outline" style="padding:3px 8px; font-size:11px;" onclick="filterCheckpointList('rest')">🍵休憩</button>
-          </div>
+          <span style="font-size:12px; color:var(--gray);">交差点等に警備員を配置</span>
           <button class="btn btn-primary" style="padding:5px 9px; font-size:11px;" onclick="setMode('add_checkpoint')">
-            ➕ 地点を追加
+            ➕ 警備地点を配置
           </button>
         </div>
         <div id="checkpoint-list-container"></div>
       </div>
 
-      <!-- タブ3: 担当班別タイムスケジュール & 移動表 -->
+      <!-- タブ3: ルート通過・休憩地点一覧 -->
+      <div id="tab-waypoints" class="tab-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-size:12px; color:var(--gray);">ルート上の休憩所・通過時刻を設定</span>
+          <button class="btn btn-primary" style="padding:5px 9px; font-size:11px;" onclick="setMode('add_waypoint')">
+            ➕ 線上に休憩・通過点を追加
+          </button>
+        </div>
+        <div id="waypoint-list-container"></div>
+      </div>
+
+      <!-- タブ4: 担当班別タイムスケジュール & 移動表 -->
       <div id="tab-teams" class="tab-content">
         <div style="margin-bottom:10px; font-size:12px; color:var(--gray);">
           担当班ごとの警備場所と時間帯、地点間の移動間隔を確認できます。
@@ -668,7 +676,7 @@
         <div id="team-schedule-container"></div>
       </div>
 
-      <!-- タブ4: 懸念点診断・出力 -->
+      <!-- タブ5: 懸念点診断・出力 -->
       <div id="tab-report" class="tab-content">
         <div style="margin-bottom: 12px;">
           <button class="btn btn-primary btn-block" onclick="runSafetyAudit()">
@@ -689,13 +697,14 @@
     <!-- 右側マップエリア -->
     <div id="map-wrapper">
       <div class="map-floating-bar">
-        <button id="tool-view" class="tool-btn active" onclick="setMode('view')">👆 閲覧</button>
+        <button id="tool-view" class="tool-btn active" onclick="setMode('view')">👆 閲覧・選択</button>
         <button id="tool-route" class="tool-btn" onclick="setMode('route')">✏️ ルート描画</button>
-        <button id="tool-cp" class="tool-btn" onclick="setMode('add_checkpoint')">📍 地点配置</button>
+        <button id="tool-cp" class="tool-btn" onclick="setMode('add_checkpoint')">📍 警備地点配置</button>
+        <button id="tool-wp" class="tool-btn" onclick="setMode('add_waypoint')">🍵 線上に休憩・通過点追加</button>
         
         <label class="map-toggle-label">
           <input type="checkbox" id="toggle-team-paths" checked onchange="toggleTeamMovePaths()">
-          <span>班の移動線を表示</span>
+          <span>班の移動線</span>
         </label>
       </div>
       <div id="map"></div>
@@ -729,28 +738,20 @@
     <div class="status-summary">
       <div>屋台状態: <strong id="yatai-location-text">出発地点</strong></div>
       <div style="font-size:11px; margin-top:2px;">
-        警戒中の班: <span id="active-guard-points" style="color:var(--primary); font-weight:bold;">なし</span>
+        現在警備中の地点: <span id="active-guard-points" style="color:var(--danger); font-weight:bold;">なし</span>
       </div>
     </div>
   </div>
 
-  <!-- 6. 地点編集モーダル -->
+  <!-- 6. 警備地点編集モーダル -->
   <div class="modal-overlay" id="checkpoint-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 id="modal-title">地点の編集</h3>
+        <h3 id="modal-title">警備地点の編集</h3>
         <button style="border:none; background:none; font-size:18px; cursor:pointer;" onclick="closeModal('checkpoint-modal')">✕</button>
       </div>
       <form id="checkpoint-form" onsubmit="saveCheckpointModal(event)">
         <input type="hidden" id="modal-cp-id">
-
-        <label style="font-size:12px; font-weight:bold; margin-bottom:4px; display:block;">地点の種類</label>
-        <div class="btn-group-toggle">
-          <button type="button" class="btn-toggle active" id="btn-type-guard" onclick="setModalType('guard')">🛡️ 警備地点</button>
-          <button type="button" class="btn-toggle" id="btn-type-rest" onclick="setModalType('rest')">🍵 休憩地点</button>
-          <button type="button" class="btn-toggle" id="btn-type-pass" onclick="setModalType('pass')">🚩 通過地点</button>
-        </div>
-        <input type="hidden" id="modal-cp-type" value="guard">
 
         <div style="display:flex; gap:8px;">
           <div class="form-group" style="width:75px;">
@@ -758,61 +759,48 @@
             <input type="text" id="modal-cp-symbol" class="form-control" required style="text-align:center; font-weight:bold;">
           </div>
           <div class="form-group" style="flex:1;">
-            <label>地点名 / 名称</label>
-            <input type="text" id="modal-cp-name" class="form-control" required placeholder="例: 本町交差点、東公民館">
+            <label>警備地点名（交差点名など）</label>
+            <input type="text" id="modal-cp-name" class="form-control" required placeholder="例: ○○交差点、神社前">
           </div>
         </div>
 
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px; margin-bottom:12px;">
-          <div style="font-size:11px; font-weight:bold; color:var(--dark); margin-bottom:6px;">屋台の通過・休憩予定</div>
+        <div style="display:flex; gap:8px;">
+          <div class="form-group" style="flex:1;">
+            <label>担当班</label>
+            <input type="text" id="modal-cp-team" class="form-control" placeholder="例: 第1班、青年部">
+          </div>
+          <div class="form-group" style="width:100px;">
+            <label>警備人数 (名)</label>
+            <input type="number" id="modal-cp-guards" class="form-control" min="0" max="50" value="2" required>
+          </div>
+        </div>
+
+        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:10px; margin-bottom:12px;">
+          <div style="font-size:11px; font-weight:bold; color:var(--danger); margin-bottom:6px;">警備配置時間帯</div>
           <div style="display:flex; gap:8px;">
             <div class="form-group" style="flex:1; margin-bottom:0;">
-              <label>屋台到着/通過予定</label>
-              <input type="time" id="modal-cp-arrival-time" class="form-control" onchange="autoFillGuardTimes()">
+              <label>警備開始時間</label>
+              <input type="time" id="modal-cp-guard-start" class="form-control" required>
             </div>
-            <div class="form-group" style="flex:1; margin-bottom:0;" id="group-rest-minutes">
-              <label>休憩時間 (分)</label>
-              <input type="number" id="modal-cp-rest-minutes" class="form-control" min="0" max="180" value="0" placeholder="例: 20">
+            <div class="form-group" style="flex:1; margin-bottom:0;">
+              <label>警備終了時間</label>
+              <input type="time" id="modal-cp-guard-end" class="form-control" required>
             </div>
           </div>
         </div>
 
-        <div id="section-guard-details">
-          <div style="display:flex; gap:8px;">
-            <div class="form-group" style="flex:1;">
-              <label>担当班</label>
-              <input type="text" id="modal-cp-team" class="form-control" placeholder="例: 第1班、青年部">
-            </div>
-            <div class="form-group" style="width:100px;">
-              <label>警備人数 (名)</label>
-              <input type="number" id="modal-cp-guards" class="form-control" min="0" max="50" value="2">
-            </div>
+        <div class="form-group">
+          <label>警戒内容（注意点・リスク）</label>
+          <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:5px;">
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('急カーブ')">+ 急カーブ</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('電線低所')">+ 電線低所</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('交通量多')">+ 交通量多</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('狭小路')">+ 狭小路</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('段差・勾配')">+ 段差・勾配</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('観客密集')">+ 観客密集</button>
+            <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('一般車迂回')">+ 一般車迂回</button>
           </div>
-
-          <div style="display:flex; gap:8px;">
-            <div class="form-group" style="flex:1;">
-              <label>警備開始時間</label>
-              <input type="time" id="modal-cp-guard-start" class="form-control">
-            </div>
-            <div class="form-group" style="flex:1;">
-              <label>警備終了時間</label>
-              <input type="time" id="modal-cp-guard-end" class="form-control">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>警戒内容（注意点・リスク）</label>
-            <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:5px;">
-              <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('急カーブ')">+ 急カーブ</button>
-              <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('電線低所')">+ 電線低所</button>
-              <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('交通量多')">+ 交通量多</button>
-              <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('狭小路')">+ 狭小路</button>
-              <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('段差・勾配')">+ 段差・勾配</button>
-              <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('観客密集')">+ 観客密集</button>
-              <button type="button" class="btn btn-outline" style="font-size:11px; padding:2px 7px;" onclick="addTagToModal('一般車迂回')">+ 一般車迂回</button>
-            </div>
-            <input type="text" id="modal-cp-risk" class="form-control" placeholder="カンマ区切りで入力 (例: 急カーブ, 電線低所)">
-          </div>
+          <input type="text" id="modal-cp-risk" class="form-control" placeholder="カンマ区切りで入力 (例: 急カーブ, 電線低所)">
         </div>
 
         <div class="modal-footer">
@@ -824,7 +812,56 @@
     </div>
   </div>
 
-  <!-- 7. APIキー設定モーダル -->
+  <!-- 7. ルート通過・休憩点モーダル -->
+  <div class="modal-overlay" id="waypoint-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-wp-title">ルート線上ポイントの追加</h3>
+        <button style="border:none; background:none; font-size:18px; cursor:pointer;" onclick="closeModal('waypoint-modal')">✕</button>
+      </div>
+      <form id="waypoint-form" onsubmit="saveWaypointModal(event)">
+        <input type="hidden" id="modal-wp-id">
+
+        <div class="form-group">
+          <label>ポイントの種別</label>
+          <div style="display:flex; gap:10px;">
+            <label style="display:flex; align-items:center; gap:4px; font-weight:normal; cursor:pointer;">
+              <input type="radio" name="wp-type" value="rest" checked onchange="toggleWpTypeUI()">
+              <span>🍵 休憩地点（屋台が停車）</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:4px; font-weight:normal; cursor:pointer;">
+              <input type="radio" name="wp-type" value="pass" onchange="toggleWpTypeUI()">
+              <span>⏱️ 通過点（通過目安）</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>場所の名称</label>
+          <input type="text" id="modal-wp-name" class="form-control" required placeholder="例: 東町公民館前、大手前通り">
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <div class="form-group" style="flex:1;">
+            <label>到着 / 通過予定時刻</label>
+            <input type="time" id="modal-wp-time" class="form-control" required>
+          </div>
+          <div class="form-group" style="flex:1;" id="wp-rest-input-group">
+            <label>休憩時間 (分)</label>
+            <input type="number" id="modal-wp-rest" class="form-control" min="1" max="180" value="20">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" id="modal-wp-btn-delete" onclick="deleteWaypointFromModal()" style="margin-right:auto;">削除</button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('waypoint-modal')">キャンセル</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 8. APIキー設定モーダル -->
   <div class="modal-overlay" id="apikey-modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -845,15 +882,16 @@
     </div>
   </div>
 
-  <!-- 8. アプリケーション本体スクリプト -->
+  <!-- 9. アプリケーション本体スクリプト -->
   <script>
     let appState = {
       planName: "本宮 午後巡行警備計画",
       startTime: "13:00",
       endTime: "17:00",
       speedKmh: 2.0,
-      routePoints: [],
-      checkpoints: [],
+      routePoints: [],      // [{lat, lng}, ...]
+      checkpoints: [],      // 警備地点 [{id, symbol, name, lat, lng, guards, team, risk, guardStart, guardEnd}, ...]
+      waypoints: [],        // ルート通過/休憩点 [{id, type:'rest'|'pass', name, lat, lng, time, restMinutes}, ...]
       currentMode: "view",
       simProgress: 0,
       simPlaying: false,
@@ -864,6 +902,7 @@
     let map = null;
     let routePolyline = null;
     let checkpointMarkers = [];
+    let waypointMarkers = [];
     let teamPolylines = [];
     let yataiMarker = null;
     let simInterval = null;
@@ -882,6 +921,7 @@
       return TEAM_COLORS[idx];
     }
 
+    // --- ログイン処理 ---
     document.getElementById('login-form').addEventListener('submit', function(e) {
       e.preventDefault();
       const id = document.getElementById('login-id').value.trim();
@@ -966,19 +1006,25 @@
         geodesic: true,
         strokeColor: '#C53030',
         strokeOpacity: 0.85,
-        strokeWeight: 6,
+        strokeWeight: 7,
         map: map
+      });
+
+      routePolyline.addListener('click', (e) => {
+        if (appState.currentMode === 'add_waypoint') {
+          promptAddWaypoint(e.latLng);
+        }
       });
 
       const yataiIcon = {
         url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
+          <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="11" fill="#fff" stroke="#c53030" stroke-width="2.5"/>
             <text x="12" y="16.5" font-size="13" font-weight="bold" text-anchor="middle" fill="#c53030">🏮</text>
           </svg>
         `),
-        scaledSize: new google.maps.Size(40, 40),
-        anchor: new google.maps.Point(20, 20)
+        scaledSize: new google.maps.Size(42, 42),
+        anchor: new google.maps.Point(21, 21)
       };
 
       yataiMarker = new google.maps.Marker({
@@ -986,7 +1032,7 @@
         map: map,
         icon: yataiIcon,
         title: "屋台現在地",
-        zIndex: 999
+        zIndex: 9999
       });
 
       map.addListener('click', (e) => {
@@ -994,10 +1040,13 @@
           addRoutePoint(e.latLng);
         } else if (appState.currentMode === 'add_checkpoint') {
           promptAddCheckpoint(e.latLng);
+        } else if (appState.currentMode === 'add_waypoint') {
+          promptAddWaypoint(e.latLng);
         }
       });
 
       renderCheckpoints();
+      renderWaypoints();
       renderTeamMovePaths();
       updateCalculatedStats();
       updateTimelineSettings();
@@ -1010,8 +1059,10 @@
       if (mode === 'view') document.getElementById('tool-view').classList.add('active');
       if (mode === 'route') document.getElementById('tool-route').classList.add('active');
       if (mode === 'add_checkpoint') document.getElementById('tool-cp').classList.add('active');
+      if (mode === 'add_waypoint') document.getElementById('tool-wp').classList.add('active');
     }
 
+    // --- ルート操作 ---
     function addRoutePoint(latLng) {
       const pt = { lat: latLng.lat(), lng: latLng.lng() };
       appState.routePoints.push(pt);
@@ -1021,7 +1072,7 @@
     }
 
     function clearRoute() {
-      if (confirm("巡行ルートを消去しますか？（地点データは保持されます）")) {
+      if (confirm("巡行ルートを消去しますか？（警備地点・休憩地点は保持されます）")) {
         appState.routePoints = [];
         routePolyline.setPath([]);
         updateCalculatedStats();
@@ -1029,6 +1080,7 @@
       }
     }
 
+    // --- 警備地点操作 ---
     function getNextSymbol() {
       const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       const used = new Set(appState.checkpoints.map(c => c.symbol));
@@ -1042,61 +1094,59 @@
       const nextSym = getNextSymbol();
       openCheckpointModal({
         id: "cp_" + Date.now(),
-        type: "guard",
         symbol: nextSym,
-        name: `地点 ${nextSym}`,
+        name: `警備地点 ${nextSym}`,
         lat: latLng.lat(),
         lng: latLng.lng(),
         guards: 2,
         team: "第1班",
         risk: "交通量多, 見通し不良",
         guardStart: "13:15",
-        guardEnd: "13:45",
-        arrivalTime: "13:30",
-        restMinutes: 0
+        guardEnd: "13:45"
       }, true);
       setMode('view');
     }
 
-    function createMarkerIcon(cp, isHighlighted = false) {
+    function createGuardMarkerIcon(cp, state) {
       const teamColor = getTeamColor(cp.team);
-      const isRest = cp.type === "rest";
-      const isPass = cp.type === "pass";
 
-      if (isRest) {
-        const bgColor = isHighlighted ? "#E53E3E" : "#319795";
+      if (state === 'active') {
         return {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="46" viewBox="0 0 36 46">
-              <path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 28 18 28s18-14.5 18-28c0-9.94-8.06-18-18-18z" fill="${bgColor}"/>
-              <circle cx="18" cy="18" r="13" fill="#FFFFFF"/>
-              <text x="18" y="19" font-size="11" font-weight="bold" text-anchor="middle" fill="${bgColor}">🍵${cp.symbol}</text>
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="74" viewBox="0 0 60 74">
+              <circle cx="30" cy="28" r="26" fill="rgba(229, 62, 62, 0.25)"/>
+              <circle cx="30" cy="28" r="21" fill="none" stroke="#E53E3E" stroke-width="2" stroke-dasharray="3,2"/>
+              <path d="M30 4C17.85 4 8 13.85 8 26c0 17 22 42 22 42s22-25 22-42c0-12.15-9.85-22-22-22z" fill="#E53E3E"/>
+              <circle cx="30" cy="26" r="16" fill="#FFFFFF" stroke="#E53E3E" stroke-width="2.5"/>
+              <text x="30" y="32" font-size="16" font-weight="900" text-anchor="middle" fill="#E53E3E">${cp.symbol}</text>
+              <rect x="6" y="0" width="48" height="15" rx="7.5" fill="#C53030"/>
+              <text x="30" y="11" font-size="9" font-weight="bold" text-anchor="middle" fill="#FFFFFF">🚨 警備中</text>
             </svg>
           `),
-          scaledSize: new google.maps.Size(36, 46),
-          anchor: new google.maps.Point(18, 46)
+          scaledSize: new google.maps.Size(60, 74),
+          anchor: new google.maps.Point(30, 68)
         };
-      } else if (isPass) {
-        const bgColor = isHighlighted ? "#E53E3E" : "#4A5568";
+      } else if (state === 'past') {
         return {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">
-              <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22c0-7.73-6.27-14-14-14z" fill="${bgColor}"/>
-              <circle cx="14" cy="14" r="10" fill="#FFFFFF"/>
-              <text x="14" y="18" font-size="11" font-weight="bold" text-anchor="middle" fill="${bgColor}">${cp.symbol}</text>
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36" opacity="0.38">
+              <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22c0-7.73-6.27-14-14-14z" fill="#718096"/>
+              <circle cx="14" cy="14" r="10" fill="#E2E8F0"/>
+              <text x="14" y="18" font-size="11" font-weight="bold" text-anchor="middle" fill="#718096">${cp.symbol}</text>
+              <circle cx="21" cy="7" r="6" fill="#4A5568"/>
+              <text x="21" y="10" font-size="8" text-anchor="middle" fill="#FFF">✓</text>
             </svg>
           `),
           scaledSize: new google.maps.Size(28, 36),
           anchor: new google.maps.Point(14, 36)
         };
       } else {
-        const pinBg = isHighlighted ? "#E53E3E" : teamColor;
         return {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="34" height="44" viewBox="0 0 34 44">
-              <path d="M17 0C7.61 0 0 7.61 0 17c0 12.5 17 27 17 27s17-14.5 17-27c0-9.39-7.61-17-17-17z" fill="${pinBg}"/>
+              <path d="M17 0C7.61 0 0 7.61 0 17c0 12.5 17 27 17 27s17-14.5 17-27c0-9.39-7.61-17-17-17z" fill="${teamColor}"/>
               <circle cx="17" cy="17" r="12" fill="#FFFFFF"/>
-              <text x="17" y="22" font-size="13" font-weight="bold" text-anchor="middle" fill="${pinBg}">${cp.symbol}</text>
+              <text x="17" y="22" font-size="13" font-weight="bold" text-anchor="middle" fill="${teamColor}">${cp.symbol}</text>
             </svg>
           `),
           scaledSize: new google.maps.Size(34, 44),
@@ -1117,8 +1167,9 @@
         const marker = new google.maps.Marker({
           position: { lat: cp.lat, lng: cp.lng },
           map: map,
-          icon: createMarkerIcon(cp),
-          title: `[${cp.symbol}] ${cp.name}`
+          icon: createGuardMarkerIcon(cp, 'waiting'),
+          title: `[${cp.symbol}] ${cp.name} (警備: ${cp.guards}名)`,
+          zIndex: 100
         });
 
         marker.addListener('click', () => {
@@ -1129,24 +1180,20 @@
 
         const card = document.createElement('div');
         card.className = "checkpoint-card";
+        card.id = `cp-card-${cp.id}`;
         const teamColor = getTeamColor(cp.team);
-
-        let typePill = '<span class="type-pill type-guard">🛡️ 警備</span>';
-        if (cp.type === "rest") typePill = `<span class="type-pill type-rest">🍵 休憩 (${cp.restMinutes || 0}分)</span>`;
-        if (cp.type === "pass") typePill = '<span class="type-pill type-pass">🚩 通過</span>';
-
         const tagsHtml = cp.risk ? cp.risk.split(/[,、]/).map(t => `<span class="tag">${t.trim()}</span>`).join("") : "";
 
         card.innerHTML = `
           <div class="cp-header">
             <span class="cp-badge" style="background:${teamColor};">${cp.symbol}</span>
-            <span class="cp-title">${cp.name} ${typePill}</span>
-            <button class="btn btn-outline" style="padding:2px 7px; font-size:11px;" onclick="openCheckpointModalById('${cp.id}')">編集</button>
+            <span class="cp-title">${cp.name}</span>
+            <span class="live-status-pill status-waiting" id="pill-${cp.id}">待機中</span>
+            <button class="btn btn-outline" style="padding:2px 7px; font-size:11px; margin-left:6px;" onclick="openCheckpointModalById('${cp.id}')">編集</button>
           </div>
           <div class="cp-meta-grid">
-            <div>担当: <strong style="color:${teamColor};">${cp.team || '未定'}</strong> (${cp.guards || 0}名)</div>
-            <div>屋台到着: <strong>${cp.arrivalTime || '--:--'}</strong></div>
-            <div style="grid-column: span 2;">警備時間: <strong>${cp.guardStart || '--:--'} 〜 ${cp.guardEnd || '--:--'}</strong></div>
+            <div>担当: <strong style="color:${teamColor};">${cp.team || '未定'}</strong> (${cp.guards}名)</div>
+            <div>警備時間: <strong>${cp.guardStart} 〜 ${cp.guardEnd}</strong></div>
           </div>
           ${tagsHtml ? `<div class="cp-tags">${tagsHtml}</div>` : ''}
         `;
@@ -1155,6 +1202,144 @@
 
       renderTeamMovePaths();
       renderTeamScheduleTab();
+      updateCalculatedStats();
+    }
+
+    // --- ルート通過・休憩点（Waypoint）操作 ---
+    function promptAddWaypoint(latLng) {
+      document.getElementById('modal-wp-id').value = "";
+      document.getElementById('modal-wp-name').value = "";
+      document.getElementById('modal-wp-time').value = "14:00";
+      document.getElementById('modal-wp-rest').value = "20";
+      document.querySelector('input[name="wp-type"][value="rest"]').checked = true;
+      toggleWpTypeUI();
+
+      document.getElementById('modal-wp-title').innerText = "ルート線上ポイントの追加";
+      document.getElementById('modal-wp-btn-delete').style.display = "none";
+
+      const modalEl = document.getElementById('waypoint-modal');
+      modalEl.dataset.lat = latLng.lat();
+      modalEl.dataset.lng = latLng.lng();
+      modalEl.style.display = 'flex';
+      setMode('view');
+    }
+
+    function toggleWpTypeUI() {
+      const type = document.querySelector('input[name="wp-type"]:checked').value;
+      document.getElementById('wp-rest-input-group').style.display = type === 'rest' ? 'block' : 'none';
+    }
+
+    function saveWaypointModal(e) {
+      e.preventDefault();
+      const id = document.getElementById('modal-wp-id').value || ("wp_" + Date.now());
+      const type = document.querySelector('input[name="wp-type"]:checked').value;
+      const name = document.getElementById('modal-wp-name').value.trim();
+      const time = document.getElementById('modal-wp-time').value;
+      const restMinutes = type === 'rest' ? (parseInt(document.getElementById('modal-wp-rest').value, 10) || 0) : 0;
+
+      const modalEl = document.getElementById('waypoint-modal');
+      const lat = parseFloat(modalEl.dataset.lat);
+      const lng = parseFloat(modalEl.dataset.lng);
+
+      const existingIndex = appState.waypoints.findIndex(w => w.id === id);
+      const wpData = { id, type, name, lat, lng, time, restMinutes };
+
+      if (existingIndex >= 0) {
+        appState.waypoints[existingIndex] = wpData;
+      } else {
+        appState.waypoints.push(wpData);
+      }
+
+      closeModal('waypoint-modal');
+      renderWaypoints();
+      saveState();
+    }
+
+    function openWaypointModalById(id) {
+      const wp = appState.waypoints.find(w => w.id === id);
+      if (!wp) return;
+      document.getElementById('modal-wp-id').value = wp.id;
+      document.getElementById('modal-wp-name').value = wp.name;
+      document.getElementById('modal-wp-time').value = wp.time;
+      document.getElementById('modal-wp-rest').value = wp.restMinutes || 20;
+      document.querySelector(`input[name="wp-type"][value="${wp.type}"]`).checked = true;
+      toggleWpTypeUI();
+
+      document.getElementById('modal-wp-title').innerText = "ルート線上ポイントの編集";
+      document.getElementById('modal-wp-btn-delete').style.display = "block";
+
+      const modalEl = document.getElementById('waypoint-modal');
+      modalEl.dataset.lat = wp.lat;
+      modalEl.dataset.lng = wp.lng;
+      modalEl.style.display = 'flex';
+    }
+
+    function deleteWaypointFromModal() {
+      const id = document.getElementById('modal-wp-id').value;
+      if (confirm("このポイントを削除しますか？")) {
+        appState.waypoints = appState.waypoints.filter(w => w.id !== id);
+        closeModal('waypoint-modal');
+        renderWaypoints();
+        saveState();
+      }
+    }
+
+    function renderWaypoints() {
+      waypointMarkers.forEach(m => m.setMap(null));
+      waypointMarkers = [];
+
+      const container = document.getElementById('waypoint-list-container');
+      container.innerHTML = "";
+      document.getElementById('wp-count').innerText = appState.waypoints.length;
+
+      appState.waypoints.forEach(wp => {
+        const isRest = wp.type === 'rest';
+        const iconSvg = isRest ? `
+          <svg xmlns="http://www.w3.org/2000/svg" width="38" height="48" viewBox="0 0 38 48">
+            <path d="M19 0C8.5 0 0 8.5 0 19c0 14 19 29 19 29s19-15 19-29c0-10.5-8.5-19-19-19z" fill="#319795"/>
+            <circle cx="19" cy="19" r="14" fill="#FFFFFF"/>
+            <text x="19" y="24" font-size="14" text-anchor="middle">🍵</text>
+          </svg>
+        ` : `
+          <svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">
+            <path d="M15 0C6.7 0 0 6.7 0 15c0 11 15 25 15 25s15-14 15-25c0-8.3-6.7-15-15-15z" fill="#4A5568"/>
+            <circle cx="15" cy="15" r="11" fill="#FFFFFF"/>
+            <text x="15" y="19" font-size="11" text-anchor="middle">⏱️</text>
+          </svg>
+        `;
+
+        const marker = new google.maps.Marker({
+          position: { lat: wp.lat, lng: wp.lng },
+          map: map,
+          icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(iconSvg),
+            scaledSize: isRest ? new google.maps.Size(38, 48) : new google.maps.Size(30, 40),
+            anchor: isRest ? new google.maps.Point(19, 48) : new google.maps.Point(15, 40)
+          },
+          title: `[${isRest ? '休憩' : '通過'}] ${wp.name} (${wp.time})`,
+          zIndex: 800
+        });
+
+        marker.addListener('click', () => {
+          openWaypointModalById(wp.id);
+        });
+
+        waypointMarkers.push(marker);
+
+        const card = document.createElement('div');
+        card.className = `waypoint-card ${isRest ? '' : 'is-pass'}`;
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong>${isRest ? '🍵 休憩' : '⏱️ 通過'}: ${wp.name}</strong>
+            <button class="btn btn-outline" style="padding:2px 6px; font-size:10px;" onclick="openWaypointModalById('${wp.id}')">編集</button>
+          </div>
+          <div style="font-size:11px; color:var(--gray); margin-top:2px;">
+            時刻: <strong>${wp.time}</strong> ${isRest ? `(休憩: <strong>${wp.restMinutes}分間</strong>)` : ''}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
       updateCalculatedStats();
     }
 
@@ -1174,23 +1359,16 @@
       for (const [teamName, points] of Object.entries(teams)) {
         if (points.length < 2) continue;
 
-        points.sort((a, b) => timeToMinutes(a.guardStart || a.arrivalTime || "00:00") - timeToMinutes(b.guardStart || b.arrivalTime || "00:00"));
-
+        points.sort((a, b) => timeToMinutes(a.guardStart || "00:00") - timeToMinutes(b.guardStart || "00:00"));
         const pathCoords = points.map(p => ({ lat: p.lat, lng: p.lng }));
         const color = getTeamColor(teamName);
-
-        const lineSymbol = {
-          path: 'M 0,-1 0,1',
-          strokeOpacity: 1,
-          scale: 3
-        };
 
         const poly = new google.maps.Polyline({
           path: pathCoords,
           strokeColor: color,
           strokeOpacity: 0,
           icons: [{
-            icon: lineSymbol,
+            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },
             offset: '0',
             repeat: '14px'
           }, {
@@ -1226,8 +1404,7 @@
       }
 
       for (const [teamName, points] of Object.entries(teams)) {
-        points.sort((a, b) => timeToMinutes(a.guardStart || a.arrivalTime || "00:00") - timeToMinutes(b.guardStart || b.arrivalTime || "00:00"));
-
+        points.sort((a, b) => timeToMinutes(a.guardStart || "00:00") - timeToMinutes(b.guardStart || "00:00"));
         const teamColor = getTeamColor(teamName);
         const card = document.createElement('div');
         card.className = "team-block";
@@ -1239,9 +1416,9 @@
             <div class="team-step">
               <span class="cp-badge" style="background:${teamColor}; width:20px; height:20px; font-size:10px;">${cp.symbol}</span>
               <div style="flex:1;">
-                <div><strong>[${cp.symbol}] ${cp.name}</strong> (${cp.guards || 0}名)</div>
+                <div><strong>[${cp.symbol}] ${cp.name}</strong> (${cp.guards}名)</div>
                 <div style="font-size:11px; color:var(--gray);">
-                  警備時間: <strong>${cp.guardStart || '--:--'} 〜 ${cp.guardEnd || '--:--'}</strong> (屋台到着: ${cp.arrivalTime || '--:--'})
+                  警備時間: <strong>${cp.guardStart} 〜 ${cp.guardEnd}</strong>
                 </div>
               </div>
             </div>
@@ -1249,8 +1426,8 @@
 
           if (i < points.length - 1) {
             const nextCp = points[i + 1];
-            const endM = timeToMinutes(cp.guardEnd || cp.arrivalTime || "00:00");
-            const nextStartM = timeToMinutes(nextCp.guardStart || nextCp.arrivalTime || "00:00");
+            const endM = timeToMinutes(cp.guardEnd || "00:00");
+            const nextStartM = timeToMinutes(nextCp.guardStart || "00:00");
             const interval = nextStartM - endM;
 
             let distM = 0;
@@ -1270,7 +1447,7 @@
             } else if (interval < 10) {
               stepsHtml += `
                 <div class="team-move-alert">
-                  ⚠️ <strong>移動余裕わずか: ${interval}分</strong> (直線距離: 約${distM}m)。先回りが間に合うか確認してください。
+                  ⚠️ <strong>移動余裕わずか: ${interval}分</strong> (距離 約${distM}m)。先回りが間に合うか確認してください。
                 </div>
               `;
             } else {
@@ -1297,63 +1474,23 @@
       }
     }
 
-    function setModalType(type) {
-      document.getElementById('modal-cp-type').value = type;
-      document.getElementById('btn-type-guard').classList.toggle('active', type === 'guard');
-      document.getElementById('btn-type-rest').classList.toggle('active', type === 'rest');
-      document.getElementById('btn-type-pass').classList.toggle('active', type === 'pass');
-
-      const restSection = document.getElementById('group-rest-minutes');
-
-      if (type === 'rest') {
-        restSection.style.display = 'block';
-        if (document.getElementById('modal-cp-rest-minutes').value == 0) {
-          document.getElementById('modal-cp-rest-minutes').value = 20;
-        }
-      } else if (type === 'pass') {
-        restSection.style.display = 'none';
-        document.getElementById('modal-cp-guards').value = 0;
-      } else {
-        restSection.style.display = 'none';
-      }
-    }
-
-    function autoFillGuardTimes() {
-      const arr = document.getElementById('modal-cp-arrival-time').value;
-      if (!arr) return;
-      const rest = parseInt(document.getElementById('modal-cp-rest-minutes').value, 10) || 0;
-      const arrM = timeToMinutes(arr);
-
-      const startM = Math.max(0, arrM - 15);
-      const endM = arrM + rest + 10;
-
-      if (!document.getElementById('modal-cp-guard-start').value) {
-        document.getElementById('modal-cp-guard-start').value = minutesToTime(startM);
-      }
-      if (!document.getElementById('modal-cp-guard-end').value) {
-        document.getElementById('modal-cp-guard-end').value = minutesToTime(endM);
-      }
-    }
-
     function openCheckpointModal(cp, isNew) {
       document.getElementById('modal-cp-id').value = cp.id;
-      setModalType(cp.type || 'guard');
       document.getElementById('modal-cp-symbol').value = cp.symbol;
       document.getElementById('modal-cp-name').value = cp.name;
       document.getElementById('modal-cp-guards').value = cp.guards !== undefined ? cp.guards : 2;
       document.getElementById('modal-cp-team').value = cp.team || "";
       document.getElementById('modal-cp-risk').value = cp.risk || "";
-      document.getElementById('modal-cp-guard-start').value = cp.guardStart || "";
-      document.getElementById('modal-cp-guard-end').value = cp.guardEnd || "";
-      document.getElementById('modal-cp-arrival-time').value = cp.arrivalTime || "";
-      document.getElementById('modal-cp-rest-minutes').value = cp.restMinutes || 0;
+      document.getElementById('modal-cp-guard-start').value = cp.guardStart || "13:15";
+      document.getElementById('modal-cp-guard-end').value = cp.guardEnd || "13:45";
 
-      document.getElementById('modal-title').innerText = isNew ? "新しい地点の追加" : `地点 [${cp.symbol}] の編集`;
+      document.getElementById('modal-title').innerText = isNew ? "新しい警備地点の追加" : `警備地点 [${cp.symbol}] の編集`;
       document.getElementById('modal-btn-delete').style.display = isNew ? "none" : "block";
 
-      document.getElementById('checkpoint-modal').dataset.lat = cp.lat;
-      document.getElementById('checkpoint-modal').dataset.lng = cp.lng;
-      document.getElementById('checkpoint-modal').style.display = 'flex';
+      const modalEl = document.getElementById('checkpoint-modal');
+      modalEl.dataset.lat = cp.lat;
+      modalEl.dataset.lng = cp.lng;
+      modalEl.style.display = 'flex';
     }
 
     function openCheckpointModalById(id) {
@@ -1374,7 +1511,6 @@
     function saveCheckpointModal(e) {
       e.preventDefault();
       const id = document.getElementById('modal-cp-id').value;
-      const type = document.getElementById('modal-cp-type').value;
       const symbol = document.getElementById('modal-cp-symbol').value.trim();
       const name = document.getElementById('modal-cp-name').value.trim();
       const guards = parseInt(document.getElementById('modal-cp-guards').value, 10) || 0;
@@ -1382,15 +1518,13 @@
       const risk = document.getElementById('modal-cp-risk').value.trim();
       const guardStart = document.getElementById('modal-cp-guard-start').value;
       const guardEnd = document.getElementById('modal-cp-guard-end').value;
-      const arrivalTime = document.getElementById('modal-cp-arrival-time').value;
-      const restMinutes = parseInt(document.getElementById('modal-cp-rest-minutes').value, 10) || 0;
 
       const modalEl = document.getElementById('checkpoint-modal');
       const lat = parseFloat(modalEl.dataset.lat);
       const lng = parseFloat(modalEl.dataset.lng);
 
       const existingIndex = appState.checkpoints.findIndex(c => c.id === id);
-      const cpData = { id, type, symbol, name, lat, lng, guards, team, risk, guardStart, guardEnd, arrivalTime, restMinutes };
+      const cpData = { id, symbol, name, lat, lng, guards, team, risk, guardStart, guardEnd };
 
       if (existingIndex >= 0) {
         appState.checkpoints[existingIndex] = cpData;
@@ -1405,7 +1539,7 @@
 
     function deleteCheckpointFromModal() {
       const id = document.getElementById('modal-cp-id').value;
-      if (confirm("この地点を削除しますか？")) {
+      if (confirm("この警備地点を削除しますか？")) {
         appState.checkpoints = appState.checkpoints.filter(c => c.id !== id);
         closeModal('checkpoint-modal');
         renderCheckpoints();
@@ -1417,18 +1551,7 @@
       document.getElementById(id).style.display = 'none';
     }
 
-    function filterCheckpointList(type) {
-      const cards = document.querySelectorAll('.checkpoint-card');
-      appState.checkpoints.forEach((cp, idx) => {
-        if (!cards[idx]) return;
-        if (type === 'all' || cp.type === type) {
-          cards[idx].style.display = 'block';
-        } else {
-          cards[idx].style.display = 'none';
-        }
-      });
-    }
-
+    // --- 計算・統計 ---
     function updateCalculatedStats() {
       let totalDist = 0;
       if (window.google && window.google.maps && google.maps.geometry && appState.routePoints.length > 1) {
@@ -1442,18 +1565,13 @@
       const distKm = totalDist / 1000;
       document.getElementById('route-distance').innerText = distKm.toFixed(2) + " km";
 
-      appState.speedKmh = parseFloat(document.getElementById('plan-speed').value) || 2.0;
-
-      const totalRestMins = appState.checkpoints.reduce((sum, cp) => sum + (cp.restMinutes || 0), 0);
+      const totalRestMins = appState.waypoints.filter(w => w.type === 'rest').reduce((sum, wp) => sum + (wp.restMinutes || 0), 0);
       document.getElementById('total-rest-time').innerText = totalRestMins + "分";
 
       const totalGuards = appState.checkpoints.reduce((sum, cp) => sum + (cp.guards || 0), 0);
       document.getElementById('total-guards').innerText = totalGuards + "名";
 
-      const guardCount = appState.checkpoints.filter(c => c.type === 'guard').length;
-      const restCount = appState.checkpoints.filter(c => c.type === 'rest').length;
-      document.getElementById('stat-guard-count').innerText = guardCount;
-      document.getElementById('stat-rest-count').innerText = restCount;
+      document.getElementById('stat-guard-count').innerText = appState.checkpoints.length + "箇所";
     }
 
     function timeToMinutes(tStr) {
@@ -1522,6 +1640,120 @@
       updateSimulationDisplay();
     }
 
+    // ========================================================
+    // ★★★ 区間タイムテーブル＆速度自動計算・停止ロジック ★★★
+    // ========================================================
+
+    function getRouteCumulativeDistances() {
+      const pts = appState.routePoints;
+      const cumDist = [0];
+      if (!window.google || !google.maps.geometry || pts.length < 2) return { cumDist: [0], totalDist: 0 };
+
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p1 = new google.maps.LatLng(pts[i]);
+        const p2 = new google.maps.LatLng(pts[i + 1]);
+        const d = google.maps.geometry.spherical.computeDistanceBetween(p1, p2);
+        cumDist.push(cumDist[cumDist.length - 1] + d);
+      }
+      return { cumDist, totalDist: cumDist[cumDist.length - 1] };
+    }
+
+    function findDistanceAlongRoute(targetLatLng, cumDist) {
+      const pts = appState.routePoints;
+      if (pts.length < 2) return 0;
+
+      let minDistanceToSegment = Infinity;
+      let bestDistAlongRoute = 0;
+      const target = new google.maps.LatLng(targetLatLng);
+
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p1 = new google.maps.LatLng(pts[i]);
+        const p2 = new google.maps.LatLng(pts[i + 1]);
+        const segLen = cumDist[i + 1] - cumDist[i];
+        if (segLen === 0) continue;
+
+        for (let step = 0; step <= 10; step++) {
+          const ratio = step / 10;
+          const sampleLat = pts[i].lat + (pts[i + 1].lat - pts[i].lat) * ratio;
+          const sampleLng = pts[i].lng + (pts[i + 1].lng - pts[i].lng) * ratio;
+          const d = google.maps.geometry.spherical.computeDistanceBetween(target, new google.maps.LatLng(sampleLat, sampleLng));
+          if (d < minDistanceToSegment) {
+            minDistanceToSegment = d;
+            bestDistAlongRoute = cumDist[i] + segLen * ratio;
+          }
+        }
+      }
+      return bestDistAlongRoute;
+    }
+
+    function getPointAtDistance(targetDist, cumDist) {
+      const pts = appState.routePoints;
+      if (pts.length === 0) return { lat: 34.8394, lng: 134.6939 };
+      if (pts.length === 1 || targetDist <= 0) return pts[0];
+      const totalDist = cumDist[cumDist.length - 1];
+      if (targetDist >= totalDist) return pts[pts.length - 1];
+
+      for (let i = 0; i < cumDist.length - 1; i++) {
+        if (targetDist >= cumDist[i] && targetDist <= cumDist[i + 1]) {
+          const segLen = cumDist[i + 1] - cumDist[i];
+          const ratio = segLen > 0 ? (targetDist - cumDist[i]) / segLen : 0;
+          return {
+            lat: pts[i].lat + (pts[i + 1].lat - pts[i].lat) * ratio,
+            lng: pts[i].lng + (pts[i + 1].lng - pts[i].lng) * ratio
+          };
+        }
+      }
+      return pts[pts.length - 1];
+    }
+
+    function buildRouteTimeline(cumDist, totalDist) {
+      const timeline = [];
+
+      const startMins = timeToMinutes(appState.startTime);
+      timeline.push({
+        id: "start",
+        name: "出発地点",
+        dist: 0,
+        arriveMins: startMins,
+        departMins: startMins,
+        isRest: false,
+        lat: appState.routePoints[0] ? appState.routePoints[0].lat : 0,
+        lng: appState.routePoints[0] ? appState.routePoints[0].lng : 0
+      });
+
+      appState.waypoints.forEach(wp => {
+        const d = findDistanceAlongRoute({ lat: wp.lat, lng: wp.lng }, cumDist);
+        const arrM = timeToMinutes(wp.time);
+        const rest = wp.type === 'rest' ? (wp.restMinutes || 0) : 0;
+        timeline.push({
+          id: wp.id,
+          name: wp.name,
+          dist: d,
+          arriveMins: arrM,
+          departMins: arrM + rest,
+          isRest: wp.type === 'rest',
+          restMinutes: rest,
+          lat: wp.lat,
+          lng: wp.lng
+        });
+      });
+
+      const endMins = timeToMinutes(appState.endTime);
+      timeline.push({
+        id: "end",
+        name: "終了地点",
+        dist: totalDist,
+        arriveMins: endMins,
+        departMins: endMins,
+        isRest: false,
+        lat: appState.routePoints[appState.routePoints.length - 1] ? appState.routePoints[appState.routePoints.length - 1].lat : 0,
+        lng: appState.routePoints[appState.routePoints.length - 1] ? appState.routePoints[appState.routePoints.length - 1].lng : 0
+      });
+
+      timeline.sort((a, b) => a.dist - b.dist);
+      return timeline;
+    }
+
     function updateSimulationDisplay() {
       const startMins = timeToMinutes(appState.startTime);
       const endMins = timeToMinutes(appState.endTime);
@@ -1531,90 +1763,115 @@
 
       document.getElementById('sim-current-time').innerText = curTimeStr;
 
-      let isRestingNow = false;
-      let restingCp = null;
-
-      appState.checkpoints.forEach(cp => {
-        if (cp.type === 'rest' && cp.arrivalTime && cp.restMinutes > 0) {
-          const arrM = timeToMinutes(cp.arrivalTime);
-          if (curMins >= arrM && curMins <= arrM + cp.restMinutes) {
-            isRestingNow = true;
-            restingCp = cp;
-          }
-        }
-      });
+      const { cumDist, totalDist } = getRouteCumulativeDistances();
 
       if (appState.routePoints.length > 0 && yataiMarker) {
-        let pt;
-        if (isRestingNow && restingCp) {
-          pt = { lat: restingCp.lat, lng: restingCp.lng };
-          document.getElementById('yatai-location-text').innerText = `🍵 [${restingCp.symbol}] ${restingCp.name} にて休憩中`;
-          document.getElementById('slider-current-status').innerText = `🍵 休憩中 (〜${minutesToTime(timeToMinutes(restingCp.arrivalTime) + restingCp.restMinutes)})`;
+        const timeline = buildRouteTimeline(cumDist, totalDist);
+
+        let currentPosition = null;
+        let statusText = "巡行中";
+        let statusLocation = "巡行中";
+
+        if (curMins <= timeline[0].departMins) {
+          currentPosition = { lat: timeline[0].lat, lng: timeline[0].lng };
+          statusText = "出発待機中";
+          statusLocation = `${timeline[0].name} (待機中)`;
+        } else if (curMins >= timeline[timeline.length - 1].arriveMins) {
+          const last = timeline[timeline.length - 1];
+          currentPosition = { lat: last.lat, lng: last.lng };
+          statusText = "巡行終了";
+          statusLocation = `${last.name} (宮入・完了)`;
         } else {
-          pt = interpolateRoutePosition(appState.simProgress);
-          const nearest = findNearestCheckpoint(pt);
-          document.getElementById('yatai-location-text').innerText = nearest ? `${nearest.name} 付近を巡行中` : "巡行中";
-          document.getElementById('slider-current-status').innerText = "巡行中";
+          for (let i = 0; i < timeline.length; i++) {
+            const node = timeline[i];
+
+            // 休憩中の完全停止
+            if (node.isRest && curMins >= node.arriveMins && curMins <= node.departMins) {
+              currentPosition = { lat: node.lat, lng: node.lng };
+              const remain = Math.ceil(node.departMins - curMins);
+              statusText = `🍵 休憩中 (〜${minutesToTime(node.departMins)})`;
+              statusLocation = `🍵 [休憩所] ${node.name} にて停車中 (残り${remain}分)`;
+              break;
+            }
+
+            // 区間移動中の速度自動調整補間
+            if (i < timeline.length - 1) {
+              const nextNode = timeline[i + 1];
+              if (curMins >= node.departMins && curMins <= nextNode.arriveMins) {
+                const segTime = nextNode.arriveMins - node.departMins;
+                const segDist = nextNode.dist - node.dist;
+
+                let ratio = 0;
+                if (segTime > 0) {
+                  ratio = (curMins - node.departMins) / segTime;
+                }
+                const currentDist = node.dist + segDist * ratio;
+                currentPosition = getPointAtDistance(currentDist, cumDist);
+
+                const speedKmh = segTime > 0 ? ((segDist / 1000) / (segTime / 60)) : 0;
+                statusText = `巡行中 (約 ${speedKmh.toFixed(1)} km/h)`;
+                statusLocation = `${node.name} ➡ ${nextNode.name} へ巡行中`;
+                break;
+              }
+            }
+          }
         }
-        yataiMarker.setPosition(pt);
+
+        if (!currentPosition) {
+          currentPosition = appState.routePoints[0];
+        }
+
+        yataiMarker.setPosition(currentPosition);
+        document.getElementById('yatai-location-text').innerText = statusLocation;
+        document.getElementById('slider-current-status').innerText = statusText;
       }
 
-      const activeGuards = new Set();
+      // 警備地点のリアルタイム変化
+      const activeGuardsList = [];
+
       appState.checkpoints.forEach((cp, idx) => {
-        let isActive = false;
-        if (cp.guardStart && cp.guardEnd) {
-          const s = timeToMinutes(cp.guardStart);
-          const e = timeToMinutes(cp.guardEnd);
-          if (curMins >= s && curMins <= e) {
-            isActive = true;
-          }
+        const sM = timeToMinutes(cp.guardStart || "00:00");
+        const eM = timeToMinutes(cp.guardEnd || "00:00");
+
+        let state = 'waiting';
+        if (curMins >= sM && curMins <= eM) {
+          state = 'active';
+        } else if (curMins > eM) {
+          state = 'past';
         }
 
         const marker = checkpointMarkers[idx];
         if (marker) {
-          marker.setIcon(createMarkerIcon(cp, isActive));
-          if (isActive && cp.team) {
-            activeGuards.add(`${cp.team}([${cp.symbol}])`);
+          marker.setIcon(createGuardMarkerIcon(cp, state));
+          marker.setZIndex(state === 'active' ? 9000 : (state === 'past' ? 50 : 100));
+        }
+
+        const cardEl = document.getElementById(`cp-card-${cp.id}`);
+        const pillEl = document.getElementById(`pill-${cp.id}`);
+        if (cardEl && pillEl) {
+          cardEl.classList.remove('active-guarding', 'past-guarding');
+          pillEl.classList.remove('status-active', 'status-waiting', 'status-ended');
+
+          if (state === 'active') {
+            cardEl.classList.add('active-guarding');
+            pillEl.classList.add('status-active');
+            pillEl.innerText = "🚨 警戒中";
+            activeGuardsList.push(`[${cp.symbol}] ${cp.name} (${cp.team || '未定'})`);
+          } else if (state === 'past') {
+            cardEl.classList.add('past-guarding');
+            pillEl.classList.add('status-ended');
+            pillEl.innerText = "✓ 解除済";
+          } else {
+            pillEl.classList.add('status-waiting');
+            pillEl.innerText = "待機中";
           }
         }
       });
 
-      document.getElementById('active-guard-points').innerText = activeGuards.size > 0 ? Array.from(activeGuards).join(", ") : "なし";
+      document.getElementById('active-guard-points').innerText = activeGuardsList.length > 0 ? activeGuardsList.join(", ") : "なし";
     }
 
-    function interpolateRoutePosition(prog) {
-      const pts = appState.routePoints;
-      if (pts.length === 0) return { lat: 34.8394, lng: 134.6939 };
-      if (pts.length === 1) return pts[0];
-      const targetIndex = (pts.length - 1) * prog;
-      const idx = Math.floor(targetIndex);
-      const remainder = targetIndex - idx;
-
-      if (idx >= pts.length - 1) return pts[pts.length - 1];
-
-      const p1 = pts[idx];
-      const p2 = pts[idx + 1];
-      return {
-        lat: p1.lat + (p2.lat - p1.lat) * remainder,
-        lng: p1.lng + (p2.lng - p1.lng) * remainder
-      };
-    }
-
-    function findNearestCheckpoint(pos) {
-      if (appState.checkpoints.length === 0 || !window.google) return null;
-      let minD = Infinity;
-      let nearest = null;
-      const target = new google.maps.LatLng(pos.lat, pos.lng);
-      appState.checkpoints.forEach(cp => {
-        const d = google.maps.geometry.spherical.computeDistanceBetween(target, new google.maps.LatLng(cp.lat, cp.lng));
-        if (d < minD) {
-          minD = d;
-          nearest = cp;
-        }
-      });
-      return minD < 120 ? nearest : null;
-    }
-
+    // --- 懸念点診断 & レポート作成 ---
     let lastGeneratedAuditReport = "";
 
     function runSafetyAudit() {
@@ -1624,31 +1881,31 @@
       if (checkpoints.length === 0) {
         results.push({
           type: "danger",
-          title: "地点が未登録です",
-          desc: "巡行ルート上に警備地点や休憩地点を登録してください。"
+          title: "警備地点が未登録です",
+          desc: "巡行ルート上に警備地点（交差点・危険箇所など）を登録してください。"
         });
       }
 
+      // 1. 人員不足チェック
       checkpoints.forEach(cp => {
-        if (cp.type === 'guard') {
-          const risks = cp.risk || "";
-          const isHighRisk = /交通量|交差点|車|急カーブ|密集|坂|段差/i.test(risks);
-          if (cp.guards <= 0) {
-            results.push({
-              type: "danger",
-              title: `【重大】地点 [${cp.symbol}] (${cp.name}) の警備員が0名です`,
-              desc: "警備地点として設定されていますが人員が配置されていません。"
-            });
-          } else if (cp.guards === 1 && isHighRisk) {
-            results.push({
-              type: "warning",
-              title: `【人員要検討】地点 [${cp.symbol}] (${cp.name}) の人員不足`,
-              desc: `警戒内容に「${risks}」と指定されていますが、警備員が1名のみです。一般車遮断や安全確保のため最低2名以上の配置を推奨します。`
-            });
-          }
+        const risks = cp.risk || "";
+        const isHighRisk = /交通量|交差点|車|急カーブ|密集|坂|段差/i.test(risks);
+        if (cp.guards <= 0) {
+          results.push({
+            type: "danger",
+            title: `【重大】地点 [${cp.symbol}] (${cp.name}) の警備員が0名です`,
+            desc: "警備地点として設定されていますが人員が配置されていません。"
+          });
+        } else if (cp.guards === 1 && isHighRisk) {
+          results.push({
+            type: "warning",
+            title: `【人員要検討】地点 [${cp.symbol}] (${cp.name}) の人員不足`,
+            desc: `警戒内容に「${risks}」と指定されていますが、警備員が1名のみです。一般車遮断や安全確保のため最低2名以上の配置を推奨します。`
+          });
         }
       });
 
+      // 2. 班の移動時間・重複チェック
       const teams = {};
       checkpoints.forEach(cp => {
         if (!cp.team || cp.team.trim() === "") return;
@@ -1684,6 +1941,35 @@
         }
       }
 
+      // 3. 区間巡行スピード診断
+      if (appState.routePoints.length > 1) {
+        const { cumDist, totalDist } = getRouteCumulativeDistances();
+        const timeline = buildRouteTimeline(cumDist, totalDist);
+        for (let i = 0; i < timeline.length - 1; i++) {
+          const n1 = timeline[i];
+          const n2 = timeline[i + 1];
+          const segTime = n2.arriveMins - n1.departMins;
+          const segDist = n2.dist - n1.dist;
+          if (segTime <= 0) {
+            results.push({
+              type: "danger",
+              title: `【通過時刻の逆転・矛盾】「${n1.name}」と「${n2.name}」`,
+              desc: `「${n1.name}」の出発(${minutesToTime(n1.departMins)})に対して、「${n2.name}」の到着予定(${minutesToTime(n2.arriveMins)})が同時または過去になっています。`
+            });
+          } else {
+            const speed = ((segDist / 1000) / (segTime / 60));
+            if (speed > 4.0) {
+              results.push({
+                type: "warning",
+                title: `【速度過大】「${n1.name}」➡「${n2.name}」の予定速度が速すぎます`,
+                desc: `この区間（距離 ${Math.round(segDist)}m）の計算速度が 時速 ${speed.toFixed(1)} km/h となっています。屋台巡行としては移動が速すぎるため、通過時刻を遅らせるか休憩時間を調整してください。`
+              });
+            }
+          }
+        }
+      }
+
+      // 4. 特殊リスク対策の確認コメント
       checkpoints.forEach(cp => {
         const risks = cp.risk || "";
         if (/電線/i.test(risks)) {
@@ -1715,7 +2001,7 @@
       let textReport = `【秋祭り屋台巡行 警備計画 懸念点診断レポート】\n`;
       textReport += `計画名: ${appState.planName}\n`;
       textReport += `巡行時間: ${appState.startTime} 〜 ${appState.endTime}\n`;
-      textReport += `登録地点数: 警備${checkpoints.filter(c=>c.type==='guard').length}箇所 / 休憩${checkpoints.filter(c=>c.type==='rest').length}箇所\n`;
+      textReport += `登録地点数: 警備${checkpoints.length}箇所 / 休憩所${appState.waypoints.filter(w=>w.type==='rest').length}箇所\n`;
       textReport += `総警備員数: ${appState.checkpoints.reduce((s,c)=>s+c.guards,0)}名\n`;
       textReport += `----------------------------------------\n\n`;
 
@@ -1723,7 +2009,7 @@
         container.innerHTML = `
           <div class="report-card" style="border-left-color:var(--success); background:#f0fff4;">
             <div class="report-title" style="color:var(--success);">✅ 重大な懸念点は検出されませんでした</div>
-            <div>配置人数・班の移動間隔・特殊リスクへの対策方針は概ね良好です。</div>
+            <div>配置人数・巡行速度・移動間隔・特殊リスクへの対策方針は概ね良好です。</div>
           </div>
         `;
         textReport += `特筆すべき重大な懸念点は検出されませんでした。\n`;
@@ -1762,6 +2048,7 @@
         try {
           const parsed = JSON.parse(saved);
           appState = Object.assign(appState, parsed);
+          if (!appState.waypoints) appState.waypoints = [];
           document.getElementById('plan-name').value = appState.planName || "";
           document.getElementById('plan-start-time').value = appState.startTime || "13:00";
           document.getElementById('plan-end-time').value = appState.endTime || "17:00";
@@ -1798,6 +2085,7 @@
         try {
           const imported = JSON.parse(e.target.result);
           appState = Object.assign(appState, imported);
+          if (!appState.waypoints) appState.waypoints = [];
           saveState();
           location.reload();
         } catch (err) {
@@ -1824,7 +2112,7 @@
       if (e && e.target) {
         e.target.classList.add('active');
       } else {
-        const btnIdx = ['tab-route', 'tab-checkpoints', 'tab-teams', 'tab-report'].indexOf(tabId);
+        const btnIdx = ['tab-route', 'tab-checkpoints', 'tab-waypoints', 'tab-teams', 'tab-report'].indexOf(tabId);
         if (btnIdx >= 0) document.querySelectorAll('.tab-btn')[btnIdx].classList.add('active');
       }
       document.getElementById(tabId).classList.add('active');
