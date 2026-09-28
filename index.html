@@ -639,10 +639,9 @@
           </div>
         </div>
 
-        <div style="margin-top: 14px;">
-          <button class="btn btn-outline btn-block" onclick="clearRoute()" style="color:var(--danger); border-color:var(--border);">
-            🗑️ 巡行ルートを消去
-          </button>
+        <div style="display:flex; gap:8px; margin-top:14px;">
+          <button class="btn btn-outline" style="flex:1;" onclick="undoRoutePoint()">↩ 1点戻す</button>
+          <button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:var(--border);" onclick="clearRoute()">🗑️ 全消去</button>
         </div>
       </div>
 
@@ -699,6 +698,7 @@
       <div class="map-floating-bar">
         <button id="tool-view" class="tool-btn active" onclick="setMode('view')">👆 閲覧・選択</button>
         <button id="tool-route" class="tool-btn" onclick="setMode('route')">✏️ ルート描画</button>
+        <button id="tool-undo-route" class="tool-btn" onclick="undoRoutePoint()" title="直前の点を1つ取り消す (Ctrl+Z)">↩ 1点戻る</button>
         <button id="tool-cp" class="tool-btn" onclick="setMode('add_checkpoint')">📍 警備地点配置</button>
         <button id="tool-wp" class="tool-btn" onclick="setMode('add_waypoint')">🍵 線上に休憩・通過点追加</button>
         
@@ -1071,6 +1071,28 @@
       saveState();
     }
 
+    // 直前のクリック地点を1つ取り消す処理
+    function undoRoutePoint() {
+      if (appState.routePoints.length === 0) {
+        alert("取り消せるルートの点がありません。");
+        return;
+      }
+      appState.routePoints.pop(); // 最後の1点を削除
+      routePolyline.setPath(appState.routePoints);
+      updateCalculatedStats();
+      saveState();
+      updateTimelineSettings();
+    }
+    
+    // キーボードの Ctrl+Z (Macは Cmd+Z) でも1点戻せるように設定
+    window.addEventListener('keydown', (e) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        undoRoutePoint();
+      }
+    });
+    
     function clearRoute() {
       if (confirm("巡行ルートを消去しますか？（警備地点・休憩地点は保持されます）")) {
         appState.routePoints = [];
