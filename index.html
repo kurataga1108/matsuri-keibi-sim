@@ -643,6 +643,7 @@
       <div class="sidebar-tabs">
         <button class="tab-btn active" onclick="switchTab('tab-route', event)">巡行計画</button>
         <button class="tab-btn" onclick="switchTab('tab-checkpoints', event)">警備地点 (<span id="cp-count">0</span>)</button>
+        <button class="tab-btn" onclick="switchTab('tab-ohana', event)">🌸御花 (<span id="ohana-count">0</span>)</button>
         <button class="tab-btn" onclick="switchTab('tab-waypoints', event)">休憩・通過 (<span id="wp-count">0</span>)</button>
         <button class="tab-btn" onclick="switchTab('tab-teams', event)">班別移動表</button>
         <button class="tab-btn" onclick="switchTab('tab-report', event)">懸念点診断</button>
@@ -701,6 +702,17 @@
         <div id="checkpoint-list-container"></div>
       </div>
 
+      <!-- タブ: 御花回収地点一覧 -->
+      <div id="tab-ohana" class="tab-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-size:12px; color:var(--gray);">御花（祝儀）回収場所を管理</span>
+          <button class="btn btn-primary" style="padding:5px 9px; font-size:11px; background:#2B6CB0;" onclick="setMode('add_ohana')">
+            ➕ 御花回収地点を配置
+          </button>
+        </div>
+        <div id="ohana-list-container"></div>
+      </div>
+      
       <!-- タブ3: ルート通過・休憩地点一覧 -->
       <div id="tab-waypoints" class="tab-content">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -745,11 +757,21 @@
         <button id="tool-route" class="tool-btn" onclick="setMode('route')">✏️ ルート描画</button>
         <button id="tool-undo-route" class="tool-btn" onclick="undoRoutePoint()" title="直前の点を1つ取り消す (Ctrl+Z)">↩ 1点戻る</button>
         <button id="tool-cp" class="tool-btn" onclick="setMode('add_checkpoint')">📍 警備地点配置</button>
-        <button id="tool-wp" class="tool-btn" onclick="setMode('add_waypoint')">🍵 線上に休憩・通過点追加</button>
+        <button id="tool-ohana" class="tool-btn" onclick="setMode('add_ohana')" style="color:#2B6CB0;">🌸 御花回収配置</button>
+        <button id="tool-wp" class="tool-btn" onclick="setMode('add_waypoint')">🍵 休憩・通過</button>
         
+        <!-- 一括表示・非表示の切り替え -->
+        <label class="map-toggle-label" style="margin-left:10px;">
+          <input type="checkbox" id="toggle-guards" checked onchange="toggleGuardLayer()">
+          <span>🛡️警備</span>
+        </label>
+        <label class="map-toggle-label">
+          <input type="checkbox" id="toggle-ohana" checked onchange="toggleOhanaLayer()">
+          <span>🌸御花</span>
+        </label>
         <label class="map-toggle-label">
           <input type="checkbox" id="toggle-team-paths" checked onchange="toggleTeamMovePaths()">
-          <span>班の移動線</span>
+          <span>班移動線</span>
         </label>
       </div>
       <div id="map"></div>
@@ -857,6 +879,54 @@
     </div>
   </div>
 
+  <!-- 御花回収地点モーダル -->
+  <div class="modal-overlay" id="ohana-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-ohana-title" style="color:#2B6CB0;">🌸 御花回収地点の編集</h3>
+        <button style="border:none; background:none; font-size:18px; cursor:pointer;" onclick="closeModal('ohana-modal')">✕</button>
+      </div>
+      <form id="ohana-form" onsubmit="saveOhanaModal(event)">
+        <input type="hidden" id="modal-ohana-id">
+
+        <div class="form-group">
+          <label>場所の名称（個人宅・店舗名など）</label>
+          <input type="text" id="modal-ohana-name" class="form-control" required placeholder="例: ○○様宅、○○商店前">
+        </div>
+
+        <div class="form-group">
+          <label>担当係 / 担当者</label>
+          <input type="text" id="modal-ohana-person" class="form-control" placeholder="例: 御花係、会計部、田中・佐藤">
+        </div>
+
+        <div style="background:#ebf8ff; border:1px solid #bee3f8; border-radius:6px; padding:10px; margin-bottom:12px;">
+          <div style="font-size:11px; font-weight:bold; color:#2B6CB0; margin-bottom:6px;">回収時間帯</div>
+          <div style="display:flex; gap:8px;">
+            <div class="form-group" style="flex:1; margin-bottom:0;">
+              <label>回収開始時間</label>
+              <input type="time" id="modal-ohana-start" class="form-control" required>
+            </div>
+            <div class="form-group" style="flex:1; margin-bottom:0;">
+              <label>回収終了時間</label>
+              <input type="time" id="modal-ohana-end" class="form-control" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>メモ・特記事項（受領品、目印など）</label>
+          <input type="text" id="modal-ohana-memo" class="form-control" placeholder="例: 玄関先にて受領、金一封">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" id="modal-ohana-btn-delete" onclick="deleteOhanaFromModal()" style="margin-right:auto;">削除</button>
+          <button type="button" class="btn btn-outline" onclick="closeModal('ohana-modal')">キャンセル</button>
+          <button type="submit" class="btn btn-primary" style="background:#2B6CB0;">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
   <!-- 7. ルート通過・休憩点モーダル -->
   <div class="modal-overlay" id="waypoint-modal">
     <div class="modal-content">
@@ -1085,12 +1155,15 @@
           addRoutePoint(e.latLng);
         } else if (appState.currentMode === 'add_checkpoint') {
           promptAddCheckpoint(e.latLng);
+        } else if (appState.currentMode === 'add_ohana') {
+          promptAddOhana(e.latLng);
         } else if (appState.currentMode === 'add_waypoint') {
           promptAddWaypoint(e.latLng);
         }
       });
 
       renderCheckpoints();
+      renderOhana();
       renderWaypoints();
       renderTeamMovePaths();
       updateCalculatedStats();
@@ -1104,6 +1177,7 @@
       if (mode === 'view') document.getElementById('tool-view').classList.add('active');
       if (mode === 'route') document.getElementById('tool-route').classList.add('active');
       if (mode === 'add_checkpoint') document.getElementById('tool-cp').classList.add('active');
+      if (mode === 'add_ohana') document.getElementById('tool-ohana').classList.add('active');
       if (mode === 'add_waypoint') document.getElementById('tool-wp').classList.add('active');
     }
 
@@ -1272,6 +1346,194 @@
       updateCalculatedStats();
     }
 
+    // --- 御花回収場所操作 ---
+    // 変数宣言
+    let ohanaMarkers = [];
+    if (!appState.ohanaPoints) appState.ohanaPoints = [];
+    appState.showGuardLayer = true;
+    appState.showOhanaLayer = true;
+
+    // 御花マーカーのアイコン（待機中: 青色ピン / 回収中: 1.5倍大・青色発光パルス・「🌸 回収中」バッジ）
+    function createOhanaMarkerIcon(op, state) {
+      if (state === 'active') {
+        return {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="74" viewBox="0 0 60 74">
+              <circle cx="30" cy="28" r="26" fill="rgba(49, 130, 206, 0.28)"/>
+              <circle cx="30" cy="28" r="21" fill="none" stroke="#2B6CB0" stroke-width="2" stroke-dasharray="3,2"/>
+              <path d="M30 4C17.85 4 8 13.85 8 26c0 17 22 42 22 42s22-25 22-42c0-12.15-9.85-22-22-22z" fill="#2B6CB0"/>
+              <circle cx="30" cy="26" r="16" fill="#FFFFFF" stroke="#2B6CB0" stroke-width="2.5"/>
+              <text x="30" y="32" font-size="16" text-anchor="middle">🌸</text>
+              <rect x="6" y="0" width="48" height="15" rx="7.5" fill="#2B6CB0"/>
+              <text x="30" y="11" font-size="9" font-weight="bold" text-anchor="middle" fill="#FFFFFF">🌸 回収中</text>
+            </svg>
+          `),
+          scaledSize: new google.maps.Size(60, 74),
+          anchor: new google.maps.Point(30, 68)
+        };
+      } else if (state === 'past') {
+        return {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36" opacity="0.38">
+              <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22c0-7.73-6.27-14-14-14z" fill="#4A5568"/>
+              <circle cx="14" cy="14" r="10" fill="#E2E8F0"/>
+              <text x="14" y="18" font-size="10" text-anchor="middle">🌸</text>
+              <circle cx="21" cy="7" r="6" fill="#2B6CB0"/>
+              <text x="21" y="10" font-size="8" text-anchor="middle" fill="#FFF">✓</text>
+            </svg>
+          `),
+          scaledSize: new google.maps.Size(28, 36),
+          anchor: new google.maps.Point(14, 36)
+        };
+      } else {
+        return {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="34" height="44" viewBox="0 0 34 44">
+              <path d="M17 0C7.61 0 0 7.61 0 17c0 12.5 17 27 17 27s17-14.5 17-27c0-9.39-7.61-17-17-17z" fill="#3182CE"/>
+              <circle cx="17" cy="17" r="12" fill="#FFFFFF"/>
+              <text x="17" y="22" font-size="13" text-anchor="middle">🌸</text>
+            </svg>
+          `),
+          scaledSize: new google.maps.Size(34, 44),
+          anchor: new google.maps.Point(17, 44)
+        };
+      }
+    }
+
+    function promptAddOhana(latLng) {
+      document.getElementById('modal-ohana-id').value = "";
+      document.getElementById('modal-ohana-name').value = "";
+      document.getElementById('modal-ohana-person').value = "御花係";
+      document.getElementById('modal-ohana-start').value = "13:30";
+      document.getElementById('modal-ohana-end').value = "14:00";
+      document.getElementById('modal-ohana-memo').value = "";
+      document.getElementById('modal-ohana-title').innerText = "🌸 新しい御花回収地点の追加";
+      document.getElementById('modal-ohana-btn-delete').style.display = "none";
+
+      const modalEl = document.getElementById('ohana-modal');
+      modalEl.dataset.lat = latLng.lat();
+      modalEl.dataset.lng = latLng.lng();
+      modalEl.style.display = 'flex';
+      setMode('view');
+    }
+
+    function saveOhanaModal(e) {
+      e.preventDefault();
+      const id = document.getElementById('modal-ohana-id').value || ("ohana_" + Date.now());
+      const name = document.getElementById('modal-ohana-name').value.trim();
+      const person = document.getElementById('modal-ohana-person').value.trim();
+      const startTime = document.getElementById('modal-ohana-start').value;
+      const endTime = document.getElementById('modal-ohana-end').value;
+      const memo = document.getElementById('modal-ohana-memo').value.trim();
+
+      const modalEl = document.getElementById('ohana-modal');
+      const lat = parseFloat(modalEl.dataset.lat);
+      const lng = parseFloat(modalEl.dataset.lng);
+
+      const existingIdx = (appState.ohanaPoints || []).findIndex(o => o.id === id);
+      const data = { id, name, person, startTime, endTime, memo, lat, lng };
+
+      if (existingIdx >= 0) {
+        appState.ohanaPoints[existingIdx] = data;
+      } else {
+        appState.ohanaPoints.push(data);
+      }
+
+      closeModal('ohana-modal');
+      renderOhana();
+      saveState();
+    }
+
+    function openOhanaModalById(id) {
+      const op = (appState.ohanaPoints || []).find(o => o.id === id);
+      if (!op) return;
+      document.getElementById('modal-ohana-id').value = op.id;
+      document.getElementById('modal-ohana-name').value = op.name;
+      document.getElementById('modal-ohana-person').value = op.person || "";
+      document.getElementById('modal-ohana-start').value = op.startTime || "";
+      document.getElementById('modal-ohana-end').value = op.endTime || "";
+      document.getElementById('modal-ohana-memo').value = op.memo || "";
+      document.getElementById('modal-ohana-title').innerText = "🌸 御花回収地点の編集";
+      document.getElementById('modal-ohana-btn-delete').style.display = "block";
+
+      const modalEl = document.getElementById('ohana-modal');
+      modalEl.dataset.lat = op.lat;
+      modalEl.dataset.lng = op.lng;
+      modalEl.style.display = 'flex';
+    }
+
+    function deleteOhanaFromModal() {
+      const id = document.getElementById('modal-ohana-id').value;
+      if (confirm("この御花回収地点を削除しますか？")) {
+        appState.ohanaPoints = (appState.ohanaPoints || []).filter(o => o.id !== id);
+        closeModal('ohana-modal');
+        renderOhana();
+        saveState();
+      }
+    }
+
+    function renderOhana() {
+      ohanaMarkers.forEach(m => m.setMap(null));
+      ohanaMarkers = [];
+
+      const list = appState.ohanaPoints || [];
+      const container = document.getElementById('ohana-list-container');
+      if (container) container.innerHTML = "";
+      const countEl = document.getElementById('ohana-count');
+      if (countEl) countEl.innerText = list.length;
+
+      const isVisible = appState.showOhanaLayer !== false;
+
+      list.forEach(op => {
+        const marker = new google.maps.Marker({
+          position: { lat: op.lat, lng: op.lng },
+          map: isVisible ? map : null,
+          icon: createOhanaMarkerIcon(op, 'waiting'),
+          title: `[御花] ${op.name} (${op.startTime}〜${op.endTime})`,
+          zIndex: 200
+        });
+
+        marker.addListener('click', () => {
+          openOhanaModalById(op.id);
+        });
+
+        ohanaMarkers.push(marker);
+
+        if (container) {
+          const card = document.createElement('div');
+          card.className = "checkpoint-card";
+          card.id = `ohana-card-${op.id}`;
+          card.innerHTML = `
+            <div class="cp-header">
+              <span class="cp-badge" style="background:#2B6CB0;">🌸</span>
+              <span class="cp-title">${op.name}</span>
+              <span class="live-status-pill status-waiting" id="ohana-pill-${op.id}">待機中</span>
+              <button class="btn btn-outline" style="padding:2px 7px; font-size:11px; margin-left:6px;" onclick="openOhanaModalById('${op.id}')">編集</button>
+            </div>
+            <div class="cp-meta-grid">
+              <div>担当: <strong>${op.person || '未定'}</strong></div>
+              <div>回収時間: <strong>${op.startTime} 〜 ${op.endTime}</strong></div>
+            </div>
+            ${op.memo ? `<div style="font-size:11px; color:var(--gray); margin-top:4px;">📝 ${op.memo}</div>` : ''}
+          `;
+          container.appendChild(card);
+        }
+      });
+    }
+
+    // 表示・非表示切り替え
+    function toggleGuardLayer() {
+      const show = document.getElementById('toggle-guards').checked;
+      appState.showGuardLayer = show;
+      checkpointMarkers.forEach(m => m.setMap(show ? map : null));
+    }
+
+    function toggleOhanaLayer() {
+      const show = document.getElementById('toggle-ohana').checked;
+      appState.showOhanaLayer = show;
+      ohanaMarkers.forEach(m => m.setMap(show ? map : null));
+    }
+    
     // --- ルート通過・休憩点（Waypoint）操作 ---
     function promptAddWaypoint(latLng) {
       document.getElementById('modal-wp-id').value = "";
