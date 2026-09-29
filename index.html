@@ -2465,30 +2465,62 @@
       }
     }
 
-    // --- 計画データのPC保存 (JSON) ---
+    // --- 計画データのPC保存 (JSON) 完全安全版 ---
     function exportDataJSON() {
-      // 1. 画面の入力枠の最新値を確実にデータへ同期
-      appState.planName = document.getElementById('plan-name').value.trim() || "本宮 午後巡行警備計画";
-      appState.startTime = document.getElementById('plan-start-time').value || "13:00";
-      appState.endTime = document.getElementById('plan-end-time').value || "17:00";
-      appState.speedKmh = parseFloat(document.getElementById('plan-speed').value) || 2.0;
+      try {
+        // 1. 画面の入力枠の値を安全に同期（null参照エラーを防止）
+        const planNameEl = document.getElementById('plan-name');
+        const startEl = document.getElementById('plan-start-time');
+        const endEl = document.getElementById('plan-end-time');
+        const speedEl = document.getElementById('plan-speed');
 
-      // 2. 安全なBlob形式でJSONファイルを生成（データ量が多くても壊れません）
-      const jsonStr = JSON.stringify(appState, null, 2);
-      const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
+        if (planNameEl) appState.planName = planNameEl.value.trim() || "本宮 午後巡行警備計画";
+        if (startEl) appState.startTime = startEl.value || "13:00";
+        if (endEl) appState.endTime = endEl.value || "17:00";
+        if (speedEl) appState.speedKmh = parseFloat(speedEl.value) || 2.0;
 
-      // 日付時刻（例: 20260929_2150）を付与して重複上書きを防止
-      const now = new Date();
-      const timeStamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
-      
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", url);
-      downloadAnchor.setAttribute("download", `屋台警備計画_${appState.planName.replace(/\s+/g, '_')}_${timeStamp}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-      URL.revokeObjectURL(url);
+        // 2. 保存用データの精査（純粋なデータのみを安全に抽出）
+        const exportPayload = {
+          planName: appState.planName,
+          startTime: appState.startTime,
+          endTime: appState.endTime,
+          speedKmh: appState.speedKmh,
+          routePoints: appState.routePoints || [],
+          checkpoints: appState.checkpoints || [],
+          waypoints: appState.waypoints || [],
+          ohanaPoints: appState.ohanaPoints || [],
+          showGuardLayer: appState.showGuardLayer !== false,
+          showOhanaLayer: appState.showOhanaLayer !== false,
+          showTeamPaths: appState.showTeamPaths !== false
+        };
+
+        const jsonStr = JSON.stringify(exportPayload, null, 2);
+
+        // 3. 安全なファイル名の生成（不正記号を除去）
+        const now = new Date();
+        const timeStamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+        const safeName = (appState.planName || "屋台警備計画").replace(/[\\/:*?"<>|\s]/g, '_');
+        const fileName = `${safeName}_${timeStamp}.json`;
+
+        // 4. ダウンロードの実行（即時破棄せず、ダウンロード開始を待ってから安全に破棄）
+        const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+
+        // ★ 1.5秒待ってから後片付けすることで、ダウンロードキャンセルを完全に防ぎます
+        setTimeout(() => {
+          if (a.parentNode) a.parentNode.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 1500);
+
+      } catch (err) {
+        console.error("保存エラー:", err);
+        alert("保存中にエラーが発生しました: " + err.message);
+      }
     }
 
     function triggerImportJSON() {
