@@ -735,53 +735,20 @@
         <div id="team-schedule-container"></div>
       </div>
 
-      <!-- タブ5: 懸念点診断・AI総合分析 -->
+      <!-- タブ5: 懸念点診断・出力 -->
       <div id="tab-report" class="tab-content">
-        <!-- APIキー設定状況エリア -->
-        <div style="padding:10px 12px; margin-bottom:12px; background:var(--bg); border:1px solid var(--border); border-radius:6px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="font-size:12px; font-weight:bold; color:var(--dark);">
-              🔑 Gemini API 連携設定
-            </div>
-            <div id="gemini-key-status-badge">
-              <span class="live-status-pill status-waiting" style="font-size:10px;">確認中...</span>
-            </div>
-          </div>
-          <div id="gemini-key-input-row" style="margin-top:8px; display:none;">
-            <div style="display:flex; gap:6px;">
-              <input type="password" id="input-gemini-key" class="form-control" placeholder="Gemini APIキーを入力 (AIzaSy...)" style="font-size:11px; padding:5px 8px;">
-              <button class="btn btn-primary" style="padding:5px 10px; font-size:11px; white-space:nowrap;" onclick="saveGeminiKeyFromInput()">保存</button>
-            </div>
-            <div style="font-size:10px; color:var(--gray); margin-top:4px;">
-              ※ <code>config.js</code> に記載するか、このブラウザの保管領域（localStorage）に保存できます。
-            </div>
-          </div>
-        </div>
-
-        <!-- 診断アクションボタン群 -->
-        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
-          <button class="btn btn-primary btn-block" style="background:#2B6CB0; padding:10px; font-size:13px; font-weight:bold; display:flex; justify-content:center; align-items:center; gap:6px;" onclick="runGeminiDiagnosis()" id="btn-run-gemini">
-            <span>🤖</span> <span>Gemini AIで総合診断を実行</span>
+        <div style="margin-bottom: 12px;">
+          <button class="btn btn-primary btn-block" onclick="runSafetyAudit()">
+            🔍 懸念点・リスクの自動診断を実行
           </button>
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-outline btn-block" style="font-size:11px; padding:6px 6px;" onclick="copyAiPrompt()" title="Web版Geminiに貼り付ける用のプロンプトをクリップボードにコピー">
-              📋 診断プロンプトをコピー
-            </button>
-            <button class="btn btn-outline btn-block" style="font-size:11px; padding:6px 6px;" onclick="runSafetyAudit()" title="通信を行わず内蔵ルールで即座に判定">
-              ⚡ ルールベース簡易判定
-            </button>
-          </div>
         </div>
-
-        <!-- 診断結果表示コンテナ -->
         <div id="audit-results-container">
           <p style="font-size:13px; color:var(--gray); text-align:center; padding:20px 0;">
-            「Gemini AIで総合診断を実行」を押すと、巡行ルート・時間・警備配置・御花回収地点を包括的に分析し、専門的な安全診断・改善提案を出力します。
+            「自動診断を実行」を押すと、人員配置の不足、班の移動時間不足、電線低所や狭小路などの懸念点を自動検出してコメントを出力します。
           </p>
         </div>
-
         <div id="audit-actions" style="display:none; margin-top:14px;">
-          <button class="btn btn-outline btn-block" onclick="copyAuditReport()">📋 診断結果全文をコピー</button>
+          <button class="btn btn-outline btn-block" onclick="copyAuditReport()">📋 診断コメントをコピー</button>
         </div>
       </div>
     </div>
@@ -2366,238 +2333,6 @@
       });
       // ★ ここまで追加
     }
-
-    // --- Gemini API連携 & 懸念点AI診断 ---
-    let lastGeneratedAuditReport = "";
-
-    // config.js または localStorage からAPIキーを取得
-    function getEffectiveGeminiKey() {
-      if (window.APP_CONFIG && window.APP_CONFIG.GEMINI_API_KEY && window.APP_CONFIG.GEMINI_API_KEY.trim() !== "" && window.APP_CONFIG.GEMINI_API_KEY !== "YOUR_GEMINI_API_KEY_HERE") {
-        return { key: window.APP_CONFIG.GEMINI_API_KEY.trim(), source: "config.js" };
-      }
-      const savedKey = localStorage.getItem('yatai_gemini_api_key');
-      if (savedKey && savedKey.trim() !== "") {
-        return { key: savedKey.trim(), source: "localStorage" };
-      }
-      return { key: "", source: "none" };
-    }
-
-    // APIキー設定状況バッジの描画
-    function renderGeminiKeyStatus() {
-      const info = getEffectiveGeminiKey();
-      const badgeEl = document.getElementById('gemini-key-status-badge');
-      const inputRow = document.getElementById('gemini-key-input-row');
-      const inputEl = document.getElementById('input-gemini-key');
-      if (!badgeEl) return;
-
-      if (info.source === "config.js") {
-        badgeEl.innerHTML = `<span class="live-status-pill status-active" style="font-size:10px; cursor:pointer;" title="config.js から読み込み済み">🟢 config.js 読込済</span>`;
-        if (inputRow) inputRow.style.display = "none";
-      } else if (info.source === "localStorage") {
-        badgeEl.innerHTML = `<span class="live-status-pill status-active" style="font-size:10px; cursor:pointer;" onclick="toggleGeminiKeyInput()" title="クリックして変更">🟢 ブラウザ保存済 ✏️</span>`;
-        if (inputEl) inputEl.value = info.key;
-        if (inputRow) inputRow.style.display = "none";
-      } else {
-        badgeEl.innerHTML = `<span class="live-status-pill status-waiting" style="font-size:10px; cursor:pointer;" onclick="toggleGeminiKeyInput()">⚠️ 未設定 (クリックして設定)</span>`;
-        if (inputRow) inputRow.style.display = "block";
-      }
-    }
-
-    function toggleGeminiKeyInput() {
-      const inputRow = document.getElementById('gemini-key-input-row');
-      if (inputRow) {
-        inputRow.style.display = inputRow.style.display === "none" ? "block" : "none";
-      }
-    }
-
-    function saveGeminiKeyFromInput() {
-      const val = (document.getElementById('input-gemini-key').value || "").trim();
-      if (!val) {
-        localStorage.removeItem('yatai_gemini_api_key');
-        alert("Gemini APIキーを削除しました。");
-      } else {
-        localStorage.setItem('yatai_gemini_api_key', val);
-        alert("Gemini APIキーをブラウザに保存しました！");
-      }
-      renderGeminiKeyStatus();
-    }
-
-    // 運行計画・警備・御花・スケジュールを構造化プロンプトに集約
-    function buildFestivalDataPrompt() {
-      const stats = calcRouteStats();
-      const distKm = (stats.totalDistance / 1000).toFixed(2);
-      const estMin = Math.round(stats.totalMinutes);
-
-      let p = `あなたは、日本の伝統的な秋祭りにおける大型屋台（地車・山車・太鼓台・神輿等）の運行管理および安全警備の最高責任コンサルタントです。\n`;
-      p += `以下の屋台巡行計画、通過・休憩ポイント、警備地点の人員配置、御花（祝儀）回収場所の設定データを詳細に精査し、プロの視点から総合的な安全診断レポートを作成してください。\n\n`;
-
-      p += `### 【基本運行情報】\n`;
-      p += `- 巡行予定時間: ${appState.settings.startTime} 〜 ${appState.settings.endTime}\n`;
-      p += `- 基準巡行速度: ${appState.settings.speedKmH} km/h\n`;
-      p += `- 総移動距離: 約 ${distKm} km (${Math.round(stats.totalDistance)} m)\n`;
-      p += `- 屋台推定所要時間: 約 ${estMin} 分間 (休憩時間含む)\n\n`;
-
-      p += `### 【ルート上の通過・休憩ポイント】 (${appState.waypoints.length} 箇所)\n`;
-      if (appState.waypoints.length === 0) {
-        p += `(登録なし)\n`;
-      } else {
-        const sortedWp = [...appState.waypoints].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
-        sortedWp.forEach((w, idx) => {
-          p += `${idx + 1}. [${w.type === 'rest' ? '休憩所' : '通過点'}] 「${w.name}」 予定時刻: ${w.time} ${w.type === 'rest' ? `(休憩時間: ${w.restMinutes}分間)` : ''}\n`;
-        });
-      }
-      p += `\n`;
-
-      p += `### 【警備地点および人員配置】 (${appState.checkpoints.length} 箇所)\n`;
-      if (appState.checkpoints.length === 0) {
-        p += `(登録なし)\n`;
-      } else {
-        appState.checkpoints.forEach(cp => {
-          p += `- 地点 [${cp.symbol}] 「${cp.name}」: 担当: ${cp.team || '未定'}, 人数: ${cp.guards}名, 警備時間: ${cp.guardStart || '未設定'} 〜 ${cp.guardEnd || '未設定'}, 警戒・特記事項: 「${cp.risk || '特になし'}」\n`;
-        });
-      }
-      p += `\n`;
-
-      p += `### 【御花（祝儀）回収地点】 (${(appState.ohanaPoints || []).length} 箇所)\n`;
-      const ohanas = appState.ohanaPoints || [];
-      if (ohanas.length === 0) {
-        p += `(登録なし)\n`;
-      } else {
-        ohanas.forEach((op, idx) => {
-          p += `${idx + 1}. 「${op.name}」: 担当: ${op.person || '未定'}, 回収時間帯: ${op.startTime || '未設定'} 〜 ${op.endTime || '未設定'}${op.memo ? `, メモ: 「${op.memo}」` : ''}\n`;
-        });
-      }
-      p += `\n`;
-
-      p += `### 【診断・出力依頼】\n`;
-      p += `以下の4つのセクションに分けて、分かりやすく具体的・実践的なアドバイス・指摘をMarkdown形式で出力してください：\n`;
-      p += `1. **🚨 重大な懸念点・安全上のリスク**\n`;
-      p += `   - 屋台通過予想時刻と警備配置時間帯のズレ（警備の空白時間）\n`;
-      p += `   - 人員不足（特に交通量の多い交差点、急カーブ、勾配、電線低所等への警備手薄）\n`;
-      p += `2. **⏱️ 運行スケジュール・速度の妥当性**\n`;
-      p += `   - 各区間の移動ペースに無理がないか、遅延リスクや事故リスク\n`;
-      p += `   - 休憩所の間隔や休憩時間の妥当性（担ぎ手・運行スタッフの疲労管理）\n`;
-      p += `3. **👥 警備班・スタッフ動線の負荷診断**\n`;
-      p += `   - 同一の班が複数の地点を移動する際の移動時間（インターバル）不足や重複\n`;
-      p += `   - 御花回収係のスケジュール過密さや屋台との位置関係\n`;
-      p += `4. **💡 運行本部への具体的改善提案**\n`;
-      p += `   - 人員の再配分、時間設定の微調整、現場での注意点など、すぐに実行できる具体的アクションプラン\n`;
-
-      return p;
-    }
-
-    // Web版Gemini用にプロンプトをコピーする機能
-    function copyAiPrompt() {
-      const prompt = buildFestivalDataPrompt();
-      navigator.clipboard.writeText(prompt).then(() => {
-        alert("診断用プロンプトをクリップボードにコピーしました！\nGemini (gemini.google.com) や ChatGPT に貼り付けて診断結果を得ることができます。");
-      }).catch(err => {
-        console.error("Copy failed", err);
-        alert("クリップボードへのコピーに失敗しました。");
-      });
-    }
-
-    // Gemini APIによる直接AI総合診断
-    async function runGeminiDiagnosis() {
-      const info = getEffectiveGeminiKey();
-      if (!info.key) {
-        alert("Gemini APIキーが設定されていません。\n「APIキー設定」欄に入力して保存するか、config.js に設定してください。\n\n※ キーがなくても「📋 診断プロンプトをコピー」ボタンからWeb版Geminiに貼り付けて診断できます。");
-        toggleGeminiKeyInput();
-        return;
-      }
-
-      const container = document.getElementById('audit-results-container');
-      const actionDiv = document.getElementById('audit-actions');
-      const runBtn = document.getElementById('btn-run-gemini');
-
-      container.innerHTML = `
-        <div style="text-align:center; padding:30px 10px;">
-          <div style="font-size:24px; animation: spin 1.2s infinite linear; display:inline-block;">🔄</div>
-          <div style="margin-top:12px; font-weight:bold; font-size:14px; color:#2B6CB0;">Gemini AIが運行計画・警備体制を多角的に診断中...</div>
-          <div style="font-size:12px; color:var(--gray); margin-top:6px;">ルート・警備・御花・スケジュールを総合分析しています</div>
-        </div>
-      `;
-      actionDiv.style.display = "none";
-      runBtn.disabled = true;
-
-      const prompt = buildFestivalDataPrompt();
-
-      try {
-        const model = "gemini-2.5-flash";
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(info.key)}`;
-
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.2,
-              maxOutputTokens: 2500
-            }
-          })
-        });
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          const errMsg = errData.error && errData.error.message ? errData.error.message : response.statusText;
-          if (response.status === 403) {
-            throw new Error(`アクセスが拒絶されました (HTTP 403)\n・HTTPリファラー制限を設定している場合、現在のURL（${location.origin}）が許可されているかご確認ください。\n・APIキーが有効かご確認ください。\n詳細: ${errMsg}`);
-          } else {
-            throw new Error(`API通信エラー (${response.status}): ${errMsg}`);
-          }
-        }
-
-        const data = await response.json();
-        const aiText = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]
-          ? data.candidates[0].content.parts[0].text
-          : "診断結果のテキストを取得できませんでした。";
-
-        lastGeneratedAuditReport = aiText;
-
-        // MarkdownテキストをHTMLに成形して表示
-        container.innerHTML = `
-          <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-            <span class="live-status-pill status-active" style="font-size:11px;">🤖 Gemini AI 総合診断完了</span>
-            <span style="font-size:11px; color:var(--gray);">${new Date().toLocaleTimeString('ja-JP')} 診断</span>
-          </div>
-          <div class="ai-report-body" style="font-size:13px; line-height:1.65; color:var(--dark); background:var(--white); padding:14px; border:1px solid var(--border); border-radius:6px; max-height:450px; overflow-y:auto;">
-            ${formatMarkdownToHtml(aiText)}
-          </div>
-        `;
-        actionDiv.style.display = "block";
-
-      } catch (err) {
-        console.error("Gemini diagnosis error:", err);
-        container.innerHTML = `
-          <div class="report-item danger" style="padding:14px;">
-            <div class="report-title" style="color:var(--danger); font-weight:bold;">❌ 診断実行エラー</div>
-            <div class="report-desc" style="white-space:pre-wrap; margin-top:6px; font-size:12px;">${err.message}</div>
-            <div style="margin-top:12px; font-size:11px; color:var(--gray);">
-              💡 <strong>代替案:</strong> 「📋 診断プロンプトをコピー」ボタンでプロンプトをコピーし、Web版の <a href="https://gemini.google.com" target="_blank" style="color:var(--primary);">Gemini</a> に貼り付けて診断を受けることも可能です。
-            </div>
-          </div>
-        `;
-      } finally {
-        runBtn.disabled = false;
-      }
-    }
-
-    // 簡易Markdown変換関数
-    function formatMarkdownToHtml(md) {
-      let html = md
-        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-        .replace(/^### (.*$)/gim, '<h4 style="font-size:13px; font-weight:bold; color:#2B6CB0; margin:14px 0 6px 0; border-bottom:1px solid #E2E8F0; padding-bottom:3px;">$1</h4>')
-        .replace(/^## (.*$)/gim, '<h3 style="font-size:14px; font-weight:bold; color:var(--dark); margin:16px 0 8px 0; border-left:3px solid #2B6CB0; padding-left:6px;">$1</h3>')
-        .replace(/^# (.*$)/gim, '<h2 style="font-size:15px; font-weight:bold; color:var(--primary); margin:18px 0 8px 0;">$1</h2>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/^- (.*$)/gim, '<li style="margin-left:16px; margin-bottom:4px;">$1</li>')
-        .replace(/^(\d+)\. (.*$)/gim, '<li style="margin-left:16px; margin-bottom:4px; list-style-type:decimal;">$2</li>')
-        .replace(/\n\n/g, '<div style="height:8px;"></div>')
-        .replace(/\n/g, '<br>');
-      return html;
-    }
     
     // --- 懸念点診断 & レポート作成 ---
     let lastGeneratedAuditReport = "";
@@ -2811,7 +2546,6 @@
           console.error("データの読み込みに失敗しました", e);
         }
       }
-      renderGeminiKeyStatus();
     }
 
     // --- 計画データのPC保存 (JSON) 完全安全版 ---
