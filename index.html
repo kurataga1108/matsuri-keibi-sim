@@ -606,11 +606,11 @@
       <form id="login-form">
         <div class="form-group">
           <label for="login-id">ログインID</label>
-          <input type="text" id="login-id" class="form-control" placeholder="IDを入力" required value="jichikai">
+          <input type="text" id="login-id" class="form-control" placeholder="IDを入力" required value="">
         </div>
         <div class="form-group">
           <label for="login-pass">パスワード</label>
-          <input type="password" id="login-pass" class="form-control" placeholder="パスワードを入力" required value="matsuri2026">
+          <input type="password" id="login-pass" class="form-control" placeholder="パスワードを入力" required value="">
         </div>
         <div class="form-group" style="display: flex; align-items: center; gap: 6px;">
           <input type="checkbox" id="remember-me" checked>
@@ -757,7 +757,7 @@
         <button id="tool-route" class="tool-btn" onclick="setMode('route')">✏️ ルート描画</button>
         <button id="tool-undo-route" class="tool-btn" onclick="undoRoutePoint()" title="直前の点を1つ取り消す (Ctrl+Z)">↩ 1点戻る</button>
         <button id="tool-cp" class="tool-btn" onclick="setMode('add_checkpoint')">📍 警備地点配置</button>
-        <button id="tool-ohana" class="tool-btn" onclick="setMode('add_ohana')" style="color:#2B6CB0;">🌸 御花回収配置</button>
+        <button id="tool-ohana" class="tool-btn" onclick="setMode('add_ohana')">🌸 御花回収配置</button>
         <button id="tool-wp" class="tool-btn" onclick="setMode('add_waypoint')">🍵 休憩・通過</button>
         
         <!-- 一括表示・非表示の切り替え -->
@@ -2201,6 +2201,50 @@
       // 吹き出し用の全文テキストを設定
       const tooltipText = `【現在警備中】\n${activeGuardsList.length > 0 ? activeGuardsList.join('\n') : '待機中'}`;
       document.querySelector('.status-summary').setAttribute('data-tooltip', tooltipText);
+
+      // ★ ここから追加：御花回収地点のリアルタイム変化（回収中＝青色発光パルス、終了＝半透明）
+      (appState.ohanaPoints || []).forEach((op, idx) => {
+        const sM = timeToMinutes(op.startTime || "00:00");
+        const eM = timeToMinutes(op.endTime || "00:00");
+
+        let state = 'waiting';
+        if (curMins >= sM && curMins <= eM) {
+          state = 'active'; // 回収中
+        } else if (curMins > eM) {
+          state = 'past';   // 回収終了
+        }
+
+        const marker = ohanaMarkers[idx];
+        if (marker) {
+          marker.setIcon(createOhanaMarkerIcon(op, state)); // アイコンを切り替え
+          marker.setZIndex(state === 'active' ? 9500 : 200);
+        }
+
+        // サイドバーの御花カードの表示更新
+        const cardEl = document.getElementById(`ohana-card-${op.id}`);
+        const pillEl = document.getElementById(`ohana-pill-${op.id}`);
+        if (cardEl && pillEl) {
+          cardEl.classList.remove('active-guarding', 'past-guarding');
+          pillEl.classList.remove('status-active', 'status-waiting', 'status-ended');
+
+          if (state === 'active') {
+            cardEl.classList.add('active-guarding');
+            pillEl.classList.add('status-active');
+            pillEl.style.background = "#bee3f8";
+            pillEl.style.color = "#2b6cb0";
+            pillEl.style.borderColor = "#90cdf4";
+            pillEl.innerText = "🌸 回収中";
+          } else if (state === 'past') {
+            cardEl.classList.add('past-guarding');
+            pillEl.classList.add('status-ended');
+            pillEl.innerText = "✓ 完了";
+          } else {
+            pillEl.classList.add('status-waiting');
+            pillEl.innerText = "待機中";
+          }
+        }
+      });
+      // ★ ここまで追加
     }
 
     // --- 懸念点診断 & レポート作成 ---
