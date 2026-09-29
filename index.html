@@ -1741,9 +1741,11 @@
         card.className = `waypoint-card ${isRest ? '' : 'is-pass'}`;
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong>${isRest ? '🍵 休憩' : '⏱️ 通過'}: ${wp.name}</strong>
-            <button class="btn btn-outline" style="padding:2px 6px; font-size:10px;" onclick="openWaypointModalById('${wp.id}')">編集</button>
-            <button class="btn btn-outline" style="padding:2px 6px; font-size:10px; margin-left:4px; color:var(--danger); border-color:var(--border);" onclick="deleteWaypointDirect('${wp.id}')">削除</button>
+            <strong style="margin-right:8px;">${isRest ? '🍵 休憩' : '⏱️ 通過'}: ${wp.name}</strong>
+            <div style="display:flex; gap:4px; align-items:center; margin-left:auto;">
+              <button class="btn btn-outline" style="padding:2px 6px; font-size:10px;" onclick="openWaypointModalById('${wp.id}')">編集</button>
+              <button class="btn btn-outline" style="padding:2px 6px; font-size:10px; color:var(--danger); border-color:var(--border);" onclick="deleteWaypointDirect('${wp.id}')">削除</button>
+            </div>
           </div>
           <div style="font-size:11px; color:var(--gray); margin-top:2px;">
             時刻: <strong>${wp.time}</strong> ${isRest ? `(休憩: <strong>${wp.restMinutes}分間</strong>)` : ''}
