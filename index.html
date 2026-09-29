@@ -332,22 +332,53 @@
       accent-color: var(--primary);
     }
 
-    /* 右側のステータス枠 */
+    /* 右側のステータス枠（幅は固定） */
     .status-summary {
       background: var(--light-gray);
       padding: 6px 12px;
       border-radius: 6px;
       font-size: 12px;
-      width: 280px;   /* 幅を280pxに完全固定 */
-      flex-shrink: 0; /* 縮まない */
-      overflow: hidden;
+      width: 280px;
+      flex-shrink: 0;
+      position: relative;
+      cursor: help;
     }
 
-    /* 文字が長くなっても枠幅を崩さず「...」で省略 */
     .status-summary div {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    /* カーソルを合わせた時に上に浮き出る吹き出し */
+    .status-summary:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      right: 0;
+      background: #2d3748;
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap; /* 改行を有効化 */
+      width: 300px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    /* 吹き出しの三角矢印 */
+    .status-summary:hover::before {
+      content: "";
+      position: absolute;
+      bottom: calc(100% + 2px);
+      right: 24px;
+      border-width: 6px;
+      border-style: solid;
+      border-color: #2d3748 transparent transparent transparent;
+      z-index: 1000;
     }
 
     /* 地点リストカード */
@@ -1905,6 +1936,9 @@
       });
 
       document.getElementById('active-guard-points').innerText = activeGuardsList.length > 0 ? activeGuardsList.join(", ") : "なし";
+      // 吹き出し用の全文テキストを設定
+      const tooltipText = `【現在警備中】\n${activeGuardsList.length > 0 ? activeGuardsList.join('\n') : '待機中'}`;
+      document.querySelector('.status-summary').setAttribute('data-tooltip', tooltipText);
     }
 
     // --- 懸念点診断 & レポート作成 ---
