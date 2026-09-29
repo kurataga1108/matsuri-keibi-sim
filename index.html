@@ -693,8 +693,9 @@
 
       <!-- タブ2: 警備地点一覧 -->
       <div id="tab-checkpoints" class="tab-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:6px;">
           <span style="font-size:12px; color:var(--gray);">交差点等に警備員を配置</span>
+          <button class="btn btn-outline" style="padding:5px 8px; font-size:11px; color:var(--danger); border-color:var(--border);" onclick="clearAllCheckpoints()">🗑️ 全消去</button>
           <button class="btn btn-primary" style="padding:5px 9px; font-size:11px;" onclick="setMode('add_checkpoint')">
             ➕ 警備地点を配置
           </button>
@@ -704,8 +705,9 @@
 
       <!-- タブ: 御花回収地点一覧 -->
       <div id="tab-ohana" class="tab-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:6px;">
           <span style="font-size:12px; color:var(--gray);">御花（祝儀）回収場所を管理</span>
+          <button class="btn btn-outline" style="padding:5px 8px; font-size:11px; color:var(--danger); border-color:var(--border);" onclick="clearAllOhana()">🗑️ 全消去</button>
           <button class="btn btn-primary" style="padding:5px 9px; font-size:11px; background:#2B6CB0;" onclick="setMode('add_ohana')">
             ➕ 御花回収地点を配置
           </button>
@@ -715,8 +717,9 @@
       
       <!-- タブ3: ルート通過・休憩地点一覧 -->
       <div id="tab-waypoints" class="tab-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:6px;">
           <span style="font-size:12px; color:var(--gray);">ルート上の休憩所・通過時刻を設定</span>
+          <button class="btn btn-outline" style="padding:5px 8px; font-size:11px; color:var(--danger); border-color:var(--border);" onclick="clearAllWaypoints()">🗑️ 全消去</button>
           <button class="btn btn-primary" style="padding:5px 9px; font-size:11px;" onclick="setMode('add_waypoint')">
             ➕ 線上に休憩・通過点を追加
           </button>
@@ -1213,11 +1216,14 @@
     });
     
     function clearRoute() {
-      if (confirm("巡行ルートを消去しますか？（警備地点・休憩地点は保持されます）")) {
+      if (confirm("巡行ルートおよび線上の休憩・通過点をすべて消去しますか？\n（※警備地点・御花回収地点は保持されます）")) {
         appState.routePoints = [];
+        appState.waypoints = []; // ルート上の休憩・通過点も連動して全消去
         routePolyline.setPath([]);
+        renderWaypoints();
         updateCalculatedStats();
         saveState();
+        updateTimelineSettings();
       }
     }
 
@@ -1330,7 +1336,8 @@
             <span class="cp-badge" style="background:${teamColor};">${cp.symbol}</span>
             <span class="cp-title">${cp.name}</span>
             <span class="live-status-pill status-waiting" id="pill-${cp.id}">待機中</span>
-            <button class="btn btn-outline" style="padding:2px 7px; font-size:11px; margin-left:6px;" onclick="openCheckpointModalById('${cp.id}')">編集</button>
+            <button class="btn btn-outline" style="padding:2px 6px; font-size:11px; margin-left:6px;" onclick="openCheckpointModalById('${cp.id}')">編集</button>
+            <button class="btn btn-outline" style="padding:2px 6px; font-size:11px; margin-left:4px; color:var(--danger); border-color:var(--border);" onclick="deleteCheckpointDirect('${cp.id}')">削除</button>
           </div>
           <div class="cp-meta-grid">
             <div>担当: <strong style="color:${teamColor};">${cp.team || '未定'}</strong> (${cp.guards}名)</div>
@@ -1508,7 +1515,8 @@
               <span class="cp-badge" style="background:#2B6CB0;">🌸</span>
               <span class="cp-title">${op.name}</span>
               <span class="live-status-pill status-waiting" id="ohana-pill-${op.id}">待機中</span>
-              <button class="btn btn-outline" style="padding:2px 7px; font-size:11px; margin-left:6px;" onclick="openOhanaModalById('${op.id}')">編集</button>
+              <button class="btn btn-outline" style="padding:2px 6px; font-size:11px; margin-left:6px;" onclick="openOhanaModalById('${op.id}')">編集</button>
+              <button class="btn btn-outline" style="padding:2px 6px; font-size:11px; margin-left:4px; color:var(--danger); border-color:var(--border);" onclick="deleteOhanaDirect('${op.id}')">削除</button>
             </div>
             <div class="cp-meta-grid">
               <div>担当: <strong>${op.person || '未定'}</strong></div>
@@ -1534,6 +1542,78 @@
       appState.showOhanaLayer = show;
       ohanaMarkers.forEach(m => m.setMap(show ? map : null));
       saveState();
+    }
+
+    // --- 直接削除 ＆ 全消去ハンドラ ---
+    function deleteCheckpointDirect(id) {
+      const cp = appState.checkpoints.find(c => c.id === id);
+      const name = cp ? `[${cp.symbol}] ${cp.name}` : "この地点";
+      if (confirm(`${name} を削除しますか？`)) {
+        appState.checkpoints = appState.checkpoints.filter(c => c.id !== id);
+        renderCheckpoints();
+        saveState();
+      }
+    }
+
+    function clearAllCheckpoints() {
+      if (appState.checkpoints.length === 0) {
+        alert("消去する警備地点がありません。");
+        return;
+      }
+      if (confirm(`登録されているすべての警備地点（全 ${appState.checkpoints.length} 箇所）を一括消去しますか？\nこの操作は取り消せません。`)) {
+        appState.checkpoints = [];
+        renderCheckpoints();
+        saveState();
+      }
+    }
+
+    function deleteWaypointDirect(id) {
+      const wp = appState.waypoints.find(w => w.id === id);
+      const name = wp ? `[${wp.type === 'rest' ? '休憩' : '通過'}] ${wp.name}` : "このポイント";
+      if (confirm(`${name} を削除しますか？`)) {
+        appState.waypoints = appState.waypoints.filter(w => w.id !== id);
+        renderWaypoints();
+        updateCalculatedStats();
+        saveState();
+        updateTimelineSettings();
+      }
+    }
+
+    function clearAllWaypoints() {
+      if (appState.waypoints.length === 0) {
+        alert("消去する休憩・通過点がありません。");
+        return;
+      }
+      if (confirm(`登録されているすべての休憩・通過点（全 ${appState.waypoints.length} 箇所）を一括消去しますか？\nこの操作は取り消せません。`)) {
+        appState.waypoints = [];
+        renderWaypoints();
+        updateCalculatedStats();
+        saveState();
+        updateTimelineSettings();
+      }
+    }
+
+    function deleteOhanaDirect(id) {
+      const op = (appState.ohanaPoints || []).find(o => o.id === id);
+      const name = op ? `[御花] ${op.name}` : "この地点";
+      if (confirm(`${name} を削除しますか？`)) {
+        appState.ohanaPoints = (appState.ohanaPoints || []).filter(o => o.id !== id);
+        renderOhana();
+        saveState();
+      }
+    }
+
+    function clearAllOhana() {
+      const list = appState.ohanaPoints || [];
+      if (list.length === 0) {
+        alert("消去する御花回収地点がありません。");
+        return;
+      }
+      if (confirm(`登録されているすべての御花回収地点（全 ${list.length} 箇所）を一括消去しますか？\nこの操作は取り消せません。`)) {
+        appState.ohanaPoints = [];
+        renderOhana();
+        saveState();
+      }
     }
     
     // --- ルート通過・休憩点（Waypoint）操作 ---
@@ -1663,6 +1743,7 @@
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <strong>${isRest ? '🍵 休憩' : '⏱️ 通過'}: ${wp.name}</strong>
             <button class="btn btn-outline" style="padding:2px 6px; font-size:10px;" onclick="openWaypointModalById('${wp.id}')">編集</button>
+            <button class="btn btn-outline" style="padding:2px 6px; font-size:10px; margin-left:4px; color:var(--danger); border-color:var(--border);" onclick="deleteWaypointDirect('${wp.id}')">削除</button>
           </div>
           <div style="font-size:11px; color:var(--gray); margin-top:2px;">
             時刻: <strong>${wp.time}</strong> ${isRest ? `(休憩: <strong>${wp.restMinutes}分間</strong>)` : ''}
