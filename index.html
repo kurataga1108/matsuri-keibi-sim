@@ -1526,12 +1526,14 @@
       const show = document.getElementById('toggle-guards').checked;
       appState.showGuardLayer = show;
       checkpointMarkers.forEach(m => m.setMap(show ? map : null));
+      saveState();
     }
 
     function toggleOhanaLayer() {
       const show = document.getElementById('toggle-ohana').checked;
       appState.showOhanaLayer = show;
       ohanaMarkers.forEach(m => m.setMap(show ? map : null));
+      saveState();
     }
     
     // --- ルート通過・休憩点（Waypoint）操作 ---
@@ -1901,6 +1903,7 @@
       document.getElementById('total-guards').innerText = totalGuards + "名";
 
       document.getElementById('stat-guard-count').innerText = appState.checkpoints.length + "箇所";
+      saveState();
     }
 
     function timeToMinutes(tStr) {
@@ -1921,6 +1924,7 @@
       document.getElementById('slider-start-label').innerText = `${appState.startTime} (出発)`;
       document.getElementById('slider-end-label').innerText = `${appState.endTime} (終了)`;
       updateSimulationDisplay();
+      saveState();
     }
 
     function togglePlay() {
@@ -2418,19 +2422,41 @@
       localStorage.setItem('yatai_sim_data', JSON.stringify(appState));
     }
 
+    // --- データの読み込み＆復元（完全対応版） ---
     function loadSavedData() {
       const saved = localStorage.getItem('yatai_sim_data');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
           appState = Object.assign(appState, parsed);
+          
+          // 各配列・レイヤー設定の安全補完（過去データでもエラーを防ぐ）
+          if (!appState.routePoints) appState.routePoints = [];
+          if (!appState.checkpoints) appState.checkpoints = [];
           if (!appState.waypoints) appState.waypoints = [];
-          document.getElementById('plan-name').value = appState.planName || "";
+          if (!appState.ohanaPoints) appState.ohanaPoints = [];
+          
+          // 過去バージョンデータの自動変換（警備時間が未設定の場合の補完）
+          appState.checkpoints.forEach(cp => {
+            if (!cp.guardStart && cp.passTime) cp.guardStart = cp.passTime;
+            if (!cp.guardEnd && cp.passTime) cp.guardEnd = cp.passTime;
+          });
+
+          // 画面入力欄への値の復元
+          document.getElementById('plan-name').value = appState.planName || "本宮 午後巡行警備計画";
           document.getElementById('plan-start-time').value = appState.startTime || "13:00";
           document.getElementById('plan-end-time').value = appState.endTime || "17:00";
           document.getElementById('plan-speed').value = appState.speedKmh || 2.0;
-          document.getElementById('plan-title-display').innerText = appState.planName;
-          if (appState.showTeamPaths !== undefined) {
+          document.getElementById('plan-title-display').innerText = appState.planName || "自治会警備計画";
+
+          // レイヤー表示チェック状態の復元
+          if (appState.showGuardLayer !== undefined && document.getElementById('toggle-guards')) {
+            document.getElementById('toggle-guards').checked = appState.showGuardLayer;
+          }
+          if (appState.showOhanaLayer !== undefined && document.getElementById('toggle-ohana')) {
+            document.getElementById('toggle-ohana').checked = appState.showOhanaLayer;
+          }
+          if (appState.showTeamPaths !== undefined && document.getElementById('toggle-team-paths')) {
             document.getElementById('toggle-team-paths').checked = appState.showTeamPaths;
           }
         } catch (e) {
@@ -2439,36 +2465,64 @@
       }
     }
 
+    // --- 計画データのPC保存 (JSON) ---
     function exportDataJSON() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+      // 1. 画面の入力枠の最新値を確実にデータへ同期
+      appState.planName = document.getElementById('plan-name').value.trim() || "本宮 午後巡行警備計画";
+      appState.startTime = document.getElementById('plan-start-time').value || "13:00";
+      appState.endTime = document.getElementById('plan-end-time').value || "17:00";
+      appState.speedKmh = parseFloat(document.getElementById('plan-speed').value) || 2.0;
+
+      // 2. 安全なBlob形式でJSONファイルを生成（データ量が多くても壊れません）
+      const jsonStr = JSON.stringify(appState, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      // 日付時刻（例: 20260929_2150）を付与して重複上書きを防止
+      const now = new Date();
+      const timeStamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+      
       const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `屋台警備計画_${appState.planName.replace(/\s+/g, '_')}.json`);
+      downloadAnchor.setAttribute("href", url);
+      downloadAnchor.setAttribute("download", `屋台警備計画_${appState.planName.replace(/\s+/g, '_')}_${timeStamp}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
+      URL.revokeObjectURL(url);
     }
 
     function triggerImportJSON() {
       document.getElementById('import-file').click();
     }
-
+    
+    // --- 保存した計画の復元 (JSON) ---
     function importDataJSON(event) {
       const file = event.target.files[0];
       if (!file) return;
+
       const reader = new FileReader();
       reader.onload = function(e) {
         try {
           const imported = JSON.parse(e.target.result);
+          
+          // データの安全マージ
           appState = Object.assign(appState, imported);
+          if (!appState.routePoints) appState.routePoints = [];
+          if (!appState.checkpoints) appState.checkpoints = [];
           if (!appState.waypoints) appState.waypoints = [];
-          saveState();
-          location.reload();
+          if (!appState.ohanaPoints) appState.ohanaPoints = [];
+
+          saveState(); // ブラウザにも保存
+          alert("計画データを正常に読み込みました。");
+          location.reload(); // 画面を更新して全地点・ルートを再描画
         } catch (err) {
           alert("JSONファイルの形式が正しくありません。");
         }
       };
       reader.readAsText(file);
+
+      // 同じファイルを再度選択できるように選択値をリセット
+      event.target.value = '';
     }
 
     function openApiKeyModal() {
