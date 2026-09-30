@@ -581,6 +581,225 @@
 
     .modal-header h3 { font-size: 16px; color: var(--primary); }
     .modal-footer { margin-top: 18px; display: flex; justify-content: flex-end; gap: 8px; }
+  /* PC表示時はスマホ専用要素を完全非表示 */
+    .mobile-only {
+      display: none !important;
+    }
+
+    /* タイムラインのPC・スマホ両立ラッパー（PCでは直下と同じ扱い） */
+    .timeline-controls-row {
+      display: contents;
+    }
+
+    /* ========================================================
+       ★★★ スマホ専用レスポンシブスタイル (画面幅768px以下) ★★★
+       ======================================================== */
+    @media (max-width: 768px) {
+      .mobile-only {
+        display: flex !important;
+      }
+      .pc-only {
+        display: none !important;
+      }
+
+      /* ヘッダーの最適化 */
+      header {
+        height: 48px;
+        padding: 0 8px;
+      }
+      .header-title {
+        font-size: 13px;
+        gap: 5px;
+      }
+      .header-title span.badge {
+        display: none; /* スマホでは自治会バッジを省略して省スペース化 */
+      }
+      .header-actions {
+        gap: 4px;
+      }
+      .header-actions .btn {
+        padding: 4px 7px;
+        font-size: 11px;
+        gap: 3px;
+      }
+
+      /* スマホ用ナビゲーションバー（地図 / リスト切り替え） */
+      #mobile-nav-bar {
+        height: 40px;
+        background: #ffffff;
+        border-bottom: 2px solid var(--border);
+        display: flex;
+        flex-shrink: 0;
+        z-index: 40;
+      }
+      .mobile-nav-btn {
+        flex: 1;
+        border: none;
+        background: none;
+        font-size: 13px;
+        font-weight: bold;
+        color: var(--gray);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+      }
+      .mobile-nav-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+        background: #fff5f5;
+      }
+
+      /* メイン作業エリア：スマホの画面高さに合わせてフィット */
+      #app-container {
+        height: calc(100vh - 48px - 40px - 88px); /* ヘッダー48 + ナビ40 + タイムライン88 */
+        flex-direction: column;
+      }
+
+      /* サイドバー（リスト画面時） */
+      #sidebar {
+        width: 100% !important;
+        height: 100% !important;
+        border-right: none;
+        display: none; /* 初期は地図表示のため非表示 */
+      }
+      #sidebar.mobile-active {
+        display: flex !important;
+        flex: 1;
+      }
+
+      /* サイドバー各タブの横スクロール対応（6タブがスマホでも綺麗に収まる） */
+      .sidebar-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        flex-shrink: 0;
+      }
+      .sidebar-tabs::-webkit-scrollbar {
+        height: 3px;
+      }
+      .sidebar-tabs::-webkit-scrollbar-thumb {
+        background: var(--border);
+      }
+      .tab-btn {
+        flex: 0 0 auto;
+        padding: 9px 12px;
+        font-size: 12px;
+      }
+
+      /* 地図エリア（地図画面時） */
+      #map-wrapper {
+        width: 100% !important;
+        height: 100% !important;
+        display: none;
+      }
+      #map-wrapper.mobile-active {
+        display: block !important;
+        flex: 1;
+      }
+
+      /* 地図上の操作バーのスマホ最適化（閲覧中心・横スクロール） */
+      .map-floating-bar {
+        top: 6px;
+        left: 6px;
+        right: 6px;
+        padding: 4px 6px;
+        gap: 4px;
+        max-width: calc(100% - 12px);
+        overflow-x: auto;
+        white-space: nowrap;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        -webkit-overflow-scrolling: touch;
+      }
+      .map-floating-bar::-webkit-scrollbar {
+        height: 2px;
+      }
+      .tool-btn {
+        padding: 5px 8px;
+        font-size: 11px;
+        flex-shrink: 0;
+      }
+      .map-toggle-label {
+        font-size: 11px;
+        flex-shrink: 0;
+        margin-left: 4px;
+      }
+
+      /* 下部タイムラインバーのスマホ最適化（2段組レイアウト） */
+      #timeline-bar {
+        height: auto !important;
+        min-height: 88px;
+        padding: 6px 10px;
+        gap: 6px;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .timeline-controls-row {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        gap: 6px;
+      }
+      .time-display {
+        font-size: 15px;
+        width: 50px;
+      }
+      .playback-controls {
+        gap: 4px;
+      }
+      .playback-controls button {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 12px;
+      }
+      .playback-controls select {
+        width: 58px !important;
+        height: 32px !important;
+        font-size: 11px;
+        padding: 2px 4px;
+      }
+      .slider-container {
+        flex: 1;
+        min-width: 0;
+      }
+      .slider-labels {
+        font-size: 9px;
+      }
+
+      /* ステータス枠（スマホでは横幅100%で視認性抜群） */
+      .status-summary {
+        width: 100% !important;
+        padding: 4px 8px;
+        font-size: 11px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .status-summary div {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* ログイン画面のスマホ最適化 */
+      .login-card {
+        padding: 24px 18px;
+        width: 92%;
+        max-width: 360px;
+      }
+      .login-card h2 {
+        font-size: 18px;
+      }
+
+      /* モーダルウィンドウのスマホ最適化 */
+      .modal-content {
+        width: 95%;
+        max-height: 85vh;
+        padding: 16px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -629,13 +848,29 @@
       <span class="badge" id="plan-title-display">自治会警備計画</span>
     </div>
     <div class="header-actions">
-      <button class="btn btn-outline" onclick="exportDataJSON()" title="計画データをPCに保存">💾 保存 (JSON)</button>
-      <button class="btn btn-outline" onclick="triggerImportJSON()" title="保存した計画を復元">📂 読込</button>
+      <button class="btn btn-outline" onclick="exportDataJSON()" title="計画データを保存">
+        <span>💾</span> <span class="pc-only">保存</span>
+      </button>
+      <button class="btn btn-primary" onclick="triggerImportJSON()" title="保存した計画を復元" style="background:#2B6CB0;">
+        <span>📂</span> <span>読込</span>
+      </button>
       <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importDataJSON(event)">
-      <button class="btn btn-outline" onclick="openApiKeyModal()" title="APIキー変更">⚙️ API設定</button>
-      <button class="btn btn-outline" onclick="logout()" style="color:var(--danger);">🚪 ログアウト</button>
+      <button class="btn btn-outline pc-only" onclick="openApiKeyModal()" title="APIキー変更">⚙️ API設定</button>
+      <button class="btn btn-outline" onclick="logout()" style="color:var(--danger);" title="ログアウト">
+        <span>🚪</span> <span class="pc-only">ログアウト</span>
+      </button>
     </div>
   </header>
+
+  <!-- 3.5. スマホ用ナビゲーションバー（地図 / 計画リスト切り替え） -->
+  <div id="mobile-nav-bar" class="mobile-only">
+    <button id="mobile-tab-map" class="mobile-nav-btn active" onclick="switchMobileView('map')">
+      🗺️ 地図シミュレータ
+    </button>
+    <button id="mobile-tab-list" class="mobile-nav-btn" onclick="switchMobileView('list')">
+      📋 計画・地点リスト
+    </button>
+  </div>
 
   <!-- 4. メイン作業エリア -->
   <div id="app-container">
@@ -783,29 +1018,31 @@
 
   <!-- 5. 下部タイムラインシミュレーター -->
   <div id="timeline-bar">
-    <div class="playback-controls">
-      <button class="btn btn-outline" id="btn-play" onclick="togglePlay()" style="width:38px; height:38px; padding:0;">▶</button>
-      <button class="btn btn-outline" onclick="resetSimulation()" style="width:38px; height:38px; padding:0;">⏮</button>
-      <select id="sim-speed" class="form-control" style="width:75px; height:38px; padding:4px;" onchange="updateSimSpeed()">
-        <option value="1">1倍</option>
-        <option value="5">5倍</option>
-        <option value="15" selected>15倍</option>
-        <option value="60">60倍</option>
-      </select>
-    </div>
-
-    <div class="time-display" id="sim-current-time">13:00</div>
-
-    <div class="slider-container">
-      <div class="slider-labels">
-        <span id="slider-start-label">13:00 (出発)</span>
-        <span id="slider-current-status" style="font-weight:bold; color:var(--primary);">屋台待機中</span>
-        <span id="slider-end-label">17:00 (終了)</span>
+    <div class="timeline-controls-row">
+      <div class="playback-controls">
+        <button class="btn btn-outline" id="btn-play" onclick="togglePlay()" style="width:38px; height:38px; padding:0;">▶</button>
+        <button class="btn btn-outline" onclick="resetSimulation()" style="width:38px; height:38px; padding:0;">⏮</button>
+        <select id="sim-speed" class="form-control" style="width:75px; height:38px; padding:4px;" onchange="updateSimSpeed()">
+          <option value="1">1倍</option>
+          <option value="5">5倍</option>
+          <option value="15" selected>15倍</option>
+          <option value="60">60倍</option>
+        </select>
       </div>
-      <input type="range" id="time-slider" min="0" max="1000" value="0" oninput="onSliderChange(this.value)">
+
+      <div class="time-display" id="sim-current-time">13:00</div>
+
+      <div class="slider-container">
+        <div class="slider-labels">
+          <span id="slider-start-label">13:00 (出発)</span>
+          <span id="slider-current-status" style="font-weight:bold; color:var(--primary);">屋台待機中</span>
+          <span id="slider-end-label">17:00 (終了)</span>
+        </div>
+        <input type="range" id="time-slider" min="0" max="1000" value="0" oninput="onSliderChange(this.value)">
+      </div>
     </div>
 
-    <div class="status-summary">
+    <div class="status-summary" onclick="showStatusDetailsMobile()">
       <div>屋台状態: <strong id="yatai-location-text">出発地点</strong></div>
       <div style="font-size:11px; margin-top:2px;">
         現在警備中の地点: <span id="active-guard-points" style="color:var(--danger); font-weight:bold;">なし</span>
@@ -1072,7 +1309,83 @@
     function initAppAfterLogin() {
       loadSavedData();
       initGoogleMaps();
+      initResponsiveView();
     }
+
+    // ==========================================
+    // ★★★ スマホ用ビュー切り替え＆レスポンシブ制御 ★★★
+    // ==========================================
+    let currentMobileView = 'map'; // スマホ時はデフォルト「地図シミュレータ」
+
+    function switchMobileView(view) {
+      currentMobileView = view;
+      const btnMap = document.getElementById('mobile-tab-map');
+      const btnList = document.getElementById('mobile-tab-list');
+      const sidebar = document.getElementById('sidebar');
+      const mapWrapper = document.getElementById('map-wrapper');
+      const timelineBar = document.getElementById('timeline-bar');
+
+      if (view === 'map') {
+        if (btnMap) btnMap.classList.add('active');
+        if (btnList) btnList.classList.remove('active');
+        if (sidebar) sidebar.classList.remove('mobile-active');
+        if (mapWrapper) mapWrapper.classList.add('mobile-active');
+        if (timelineBar) timelineBar.style.display = 'flex'; // 地図時はタイムライン表示
+
+        // Google Mapsの再計算（タブ切り替え時のグレー表示を防止）
+        if (map && window.google && window.google.maps) {
+          setTimeout(() => {
+            google.maps.event.trigger(map, 'resize');
+            if (yataiMarker) map.setCenter(yataiMarker.getPosition());
+          }, 60);
+        }
+      } else {
+        if (btnMap) btnMap.classList.remove('active');
+        if (btnList) btnList.classList.add('active');
+        if (sidebar) sidebar.classList.add('mobile-active');
+        if (mapWrapper) mapWrapper.classList.remove('mobile-active');
+        // リスト閲覧時は縦画面を最大限広く使えるようにタイムラインを非表示
+        if (timelineBar) timelineBar.style.display = 'none';
+      }
+    }
+
+    // スマホでステータス枠をタップした時の詳細表示
+    function showStatusDetailsMobile() {
+      if (window.innerWidth <= 768) {
+        const summaryEl = document.querySelector('.status-summary');
+        const tooltip = summaryEl ? summaryEl.getAttribute('data-tooltip') : '';
+        if (tooltip) {
+          alert(tooltip);
+        }
+      }
+    }
+
+    function initResponsiveView() {
+      if (window.innerWidth <= 768) {
+        switchMobileView('map');
+      } else {
+        // PC表示時はクラスを解除して通常配置
+        const sidebar = document.getElementById('sidebar');
+        const mapWrapper = document.getElementById('map-wrapper');
+        const timelineBar = document.getElementById('timeline-bar');
+        if (sidebar) sidebar.classList.remove('mobile-active');
+        if (mapWrapper) mapWrapper.classList.remove('mobile-active');
+        if (timelineBar) timelineBar.style.display = 'flex';
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        const sidebar = document.getElementById('sidebar');
+        const mapWrapper = document.getElementById('map-wrapper');
+        const timelineBar = document.getElementById('timeline-bar');
+        if (sidebar) sidebar.classList.remove('mobile-active');
+        if (mapWrapper) mapWrapper.classList.remove('mobile-active');
+        if (timelineBar) timelineBar.style.display = 'flex';
+      } else {
+        switchMobileView(currentMobileView);
+      }
+    });
 
     function getApiKey() {
       if (typeof GOOGLE_MAPS_API_KEY !== 'undefined' && GOOGLE_MAPS_API_KEY.trim() !== "") {
@@ -1354,7 +1667,6 @@
     }
 
     // --- 御花回収場所操作 ---
-    // 変数宣言
     let ohanaMarkers = [];
     if (!appState.ohanaPoints) appState.ohanaPoints = [];
     appState.showGuardLayer = true;
@@ -2286,10 +2598,11 @@
 
       document.getElementById('active-guard-points').innerText = activeGuardsList.length > 0 ? activeGuardsList.join(", ") : "なし";
       // 吹き出し用の全文テキストを設定
-      const tooltipText = `【現在警備中】\n${activeGuardsList.length > 0 ? activeGuardsList.join('\n') : '待機中'}`;
-      document.querySelector('.status-summary').setAttribute('data-tooltip', tooltipText);
+      const tooltipText = "【現在警備中】\n" + (activeGuardsList.length > 0 ? activeGuardsList.join("\n") : "待機中");
+      const summaryEl = document.querySelector('.status-summary');
+      if (summaryEl) summaryEl.setAttribute('data-tooltip', tooltipText);
 
-      // ★ ここから追加：御花回収地点のリアルタイム変化（回収中＝青色発光パルス、終了＝半透明）
+      // 御花回収地点のリアルタイム変化（回収中＝青色発光パルス、終了＝半透明）
       (appState.ohanaPoints || []).forEach((op, idx) => {
         const sM = timeToMinutes(op.startTime || "00:00");
         const eM = timeToMinutes(op.endTime || "00:00");
@@ -2331,7 +2644,6 @@
           }
         }
       });
-      // ★ ここまで追加
     }
     
     // --- 懸念点診断 & レポート作成 ---
@@ -2461,12 +2773,19 @@
       const container = document.getElementById('audit-results-container');
       container.innerHTML = "";
 
-      let textReport = `【秋祭り屋台巡行 警備計画 懸念点診断レポート】\n`;
-      textReport += `計画名: ${appState.planName}\n`;
-      textReport += `巡行時間: ${appState.startTime} 〜 ${appState.endTime}\n`;
-      textReport += `登録地点数: 警備${checkpoints.length}箇所 / 休憩所${appState.waypoints.filter(w=>w.type==='rest').length}箇所\n`;
-      textReport += `総警備員数: ${appState.checkpoints.reduce((s,c)=>s+c.guards,0)}名\n`;
-      textReport += `----------------------------------------\n\n`;
+      let textReport = `【秋祭り屋台巡行 警備計画 懸念点診断レポート】
+`;
+      textReport += `計画名: ${appState.planName}
+`;
+      textReport += `巡行時間: ${appState.startTime} 〜 ${appState.endTime}
+`;
+      textReport += `登録地点数: 警備${checkpoints.length}箇所 / 休憩所${appState.waypoints.filter(w=>w.type==='rest').length}箇所
+`;
+      textReport += `総警備員数: ${appState.checkpoints.reduce((s,c)=>s+c.guards,0)}名
+`;
+      textReport += `----------------------------------------
+
+`;
 
       if (results.length === 0) {
         container.innerHTML = `
@@ -2475,7 +2794,8 @@
             <div>配置人数・巡行速度・移動間隔・特殊リスクへの対策方針は概ね良好です。</div>
           </div>
         `;
-        textReport += `特筆すべき重大な懸念点は検出されませんでした。\n`;
+        textReport += `特筆すべき重大な懸念点は検出されませんでした。
+`;
       } else {
         results.forEach((r, idx) => {
           const card = document.createElement('div');
@@ -2485,7 +2805,10 @@
             <div>${r.desc}</div>
           `;
           container.appendChild(card);
-          textReport += `${idx+1}. ${r.title}\n   ${r.desc}\n\n`;
+          textReport += `${idx+1}. ${r.title}
+   ${r.desc}
+
+`;
         });
       }
 
@@ -2526,11 +2849,12 @@
           });
 
           // 画面入力欄への値の復元
-          document.getElementById('plan-name').value = appState.planName || "本宮 午後巡行警備計画";
-          document.getElementById('plan-start-time').value = appState.startTime || "13:00";
-          document.getElementById('plan-end-time').value = appState.endTime || "17:00";
-          document.getElementById('plan-speed').value = appState.speedKmh || 2.0;
-          document.getElementById('plan-title-display').innerText = appState.planName || "自治会警備計画";
+          if (document.getElementById('plan-name')) document.getElementById('plan-name').value = appState.planName || "本宮 午後巡行警備計画";
+          if (document.getElementById('plan-start-time')) document.getElementById('plan-start-time').value = appState.startTime || "13:00";
+          if (document.getElementById('plan-end-time')) document.getElementById('plan-end-time').value = appState.endTime || "17:00";
+          const speedEl = document.getElementById('plan-speed');
+          if (speedEl) speedEl.value = appState.speedKmh || 2.0;
+          if (document.getElementById('plan-title-display')) document.getElementById('plan-title-display').innerText = appState.planName || "自治会警備計画";
 
           // レイヤー表示チェック状態の復元
           if (appState.showGuardLayer !== undefined && document.getElementById('toggle-guards')) {
@@ -2551,7 +2875,6 @@
     // --- 計画データのPC保存 (JSON) 完全安全版 ---
     function exportDataJSON() {
       try {
-        // 1. 画面の入力枠の値を安全に同期（null参照エラーを防止）
         const planNameEl = document.getElementById('plan-name');
         const startEl = document.getElementById('plan-start-time');
         const endEl = document.getElementById('plan-end-time');
@@ -2562,7 +2885,6 @@
         if (endEl) appState.endTime = endEl.value || "17:00";
         if (speedEl) appState.speedKmh = parseFloat(speedEl.value) || 2.0;
 
-        // 2. 保存用データの精査（純粋なデータのみを安全に抽出）
         const exportPayload = {
           planName: appState.planName,
           startTime: appState.startTime,
@@ -2579,13 +2901,11 @@
 
         const jsonStr = JSON.stringify(exportPayload, null, 2);
 
-        // 3. 安全なファイル名の生成（不正記号を除去）
         const now = new Date();
         const timeStamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
-        const safeName = (appState.planName || "屋台警備計画").replace(/[\\/:*?"<>|\s]/g, '_');
+        const safeName = (appState.planName || "屋台警備計画").replace(/[\/:*?"<>|\s]/g, '_');
         const fileName = `${safeName}_${timeStamp}.json`;
 
-        // 4. ダウンロードの実行（即時破棄せず、ダウンロード開始を待ってから安全に破棄）
         const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -2594,7 +2914,6 @@
         document.body.appendChild(a);
         a.click();
 
-        // ★ 1.5秒待ってから後片付けすることで、ダウンロードキャンセルを完全に防ぎます
         setTimeout(() => {
           if (a.parentNode) a.parentNode.removeChild(a);
           URL.revokeObjectURL(url);
@@ -2620,23 +2939,21 @@
         try {
           const imported = JSON.parse(e.target.result);
           
-          // データの安全マージ
           appState = Object.assign(appState, imported);
           if (!appState.routePoints) appState.routePoints = [];
           if (!appState.checkpoints) appState.checkpoints = [];
           if (!appState.waypoints) appState.waypoints = [];
           if (!appState.ohanaPoints) appState.ohanaPoints = [];
 
-          saveState(); // ブラウザにも保存
+          saveState();
           alert("計画データを正常に読み込みました。");
-          location.reload(); // 画面を更新して全地点・ルートを再描画
+          location.reload();
         } catch (err) {
           alert("JSONファイルの形式が正しくありません。");
         }
       };
       reader.readAsText(file);
 
-      // 同じファイルを再度選択できるように選択値をリセット
       event.target.value = '';
     }
 
@@ -2657,8 +2974,9 @@
       if (e && e.target) {
         e.target.classList.add('active');
       } else {
-        const btnIdx = ['tab-route', 'tab-checkpoints', 'tab-waypoints', 'tab-teams', 'tab-report'].indexOf(tabId);
-        if (btnIdx >= 0) document.querySelectorAll('.tab-btn')[btnIdx].classList.add('active');
+        const tabBtns = Array.from(document.querySelectorAll('.tab-btn'));
+        const targetBtn = tabBtns.find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+        if (targetBtn) targetBtn.classList.add('active');
       }
       document.getElementById(tabId).classList.add('active');
     }
@@ -2673,3 +2991,4 @@
   </script>
 </body>
 </html>
+
