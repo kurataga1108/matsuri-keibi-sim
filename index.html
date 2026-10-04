@@ -2199,27 +2199,45 @@
 
 
     // 御花マーカーのアイコン（待機中: 青色ピン / 回収中: 1.5倍大・青色発光パルス・「🌸 回収中」バッジ）
-    function createOhanaMarkerIcon(op, state) {
+    function createOhanaMarkerIcon(op, state, subState) {
       if (state === 'active') {
+        let badgeText = '🌸 回収中';
+        let badgeColor = '#2B6CB0';
+        let pulseColor = 'rgba(43, 108, 176, 0.28)';
+
+        if (subState === 'outbound') {
+          badgeText = '🚶 急行中';
+          badgeColor = '#D53F8C';
+          pulseColor = 'rgba(213, 63, 140, 0.28)';
+        } else if (subState === 'inter_move') {
+          badgeText = '🚶 移動中';
+          badgeColor = '#9B2C2C';
+          pulseColor = 'rgba(155, 44, 44, 0.28)';
+        } else if (subState === 'inbound') {
+          badgeText = '🏃 帰還中';
+          badgeColor = '#2B6CB0';
+          pulseColor = 'rgba(43, 108, 176, 0.28)';
+        }
+
         return {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="74" viewBox="0 0 60 74">
-              <circle cx="30" cy="28" r="26" fill="rgba(49, 130, 206, 0.28)"/>
-              <circle cx="30" cy="28" r="21" fill="none" stroke="#2B6CB0" stroke-width="2" stroke-dasharray="3,2"/>
-              <path d="M30 4C17.85 4 8 13.85 8 26c0 17 22 42 22 42s22-25 22-42c0-12.15-9.85-22-22-22z" fill="#2B6CB0"/>
-              <circle cx="30" cy="26" r="16" fill="#FFFFFF" stroke="#2B6CB0" stroke-width="2.5"/>
-              <text x="30" y="32" font-size="16" text-anchor="middle">🌸</text>
-              <rect x="6" y="0" width="48" height="15" rx="7.5" fill="#2B6CB0"/>
-              <text x="30" y="11" font-size="9" font-weight="bold" text-anchor="middle" fill="#FFFFFF">🌸 回収中</text>
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="78" viewBox="0 0 64 78">
+              <circle cx="32" cy="30" r="28" fill="${pulseColor}"/>
+              <circle cx="32" cy="30" r="23" fill="none" stroke="${badgeColor}" stroke-width="2.5" stroke-dasharray="4,2"/>
+              <path d="M32 6C19.85 6 10 15.85 10 28c0 17 22 42 22 42s22-25 22-42c0-12.15-9.85-22-22-22z" fill="${badgeColor}"/>
+              <circle cx="32" cy="28" r="16" fill="#FFFFFF" stroke="${badgeColor}" stroke-width="2.5"/>
+              <text x="32" y="34" font-size="16" text-anchor="middle">🌸</text>
+              <rect x="6" y="0" width="52" height="16" rx="8" fill="${badgeColor}"/>
+              <text x="32" y="12" font-size="9" font-weight="900" text-anchor="middle" fill="#FFFFFF">${badgeText}</text>
             </svg>
           `),
-          scaledSize: new google.maps.Size(60, 74),
-          anchor: new google.maps.Point(30, 68)
+          scaledSize: new google.maps.Size(64, 78),
+          anchor: new google.maps.Point(32, 70)
         };
       } else if (state === 'past') {
         return {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36" opacity="0.38">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36" opacity="0.4">
               <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22c0-7.73-6.27-14-14-14z" fill="#4A5568"/>
               <circle cx="14" cy="14" r="10" fill="#E2E8F0"/>
               <text x="14" y="18" font-size="10" text-anchor="middle">🌸</text>
@@ -3764,15 +3782,21 @@
           const eM = timeToMinutes(op.endTime || "00:00");
           const dur = op.moveDuration || 5;
 
-          // 出発時刻と出発座標
-          let departMins = sM - dur;
+          // ★★★ 強調表示期間の定義 ★★★
+          // 屋台を離れてから屋台に戻ってくるまで。
+          // 複数箇所回収する場合は現在の回収箇所が終わったタイミングまで。
+          // 1. 開始タイミング: 直前地点から連続なら直前地点の終了時刻、屋台からなら出発時刻(sM - dur)
+          const activeStartMins = isContinueFromPrev ? timeToMinutes(prevOp.endTime || "00:00") : (sM - dur);
+          // 2. 終了タイミング: 次の地点へ連続ならこの地点の回収終了時刻(eM)、屋台へ戻るなら屋台到着時刻(eM + dur)
+          const activeEndMins = isContinueToNext ? eM : (eM + dur);
+
+          // 出発時刻と出発座標（アニメーション描画用）
+          const departMins = activeStartMins;
           let fromLatLng = null;
 
           if (isContinueFromPrev) {
-            departMins = timeToMinutes(prevOp.endTime || "00:00");
             fromLatLng = new google.maps.LatLng(prevOp.lat, prevOp.lng);
           } else {
-            departMins = sM - dur;
             if (yataiLatLng) {
               const yataiEscortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, isRear ? 'rear' : 'front');
               fromLatLng = new google.maps.LatLng(yataiEscortCoords.lat, yataiEscortCoords.lng);
@@ -3782,176 +3806,134 @@
           const opLatLng = new google.maps.LatLng(op.lat, op.lng);
 
           let markerState = 'waiting';
+          let subState = 'waiting';
           let cardState = 'waiting';
           let statusNote = '';
 
-          if (curMins >= departMins && curMins < sM) {
-            // --- フェーズ1: 移動・急行中 ---
-            if (isRear) isRearDispatched = true; else isFrontDispatched = true;
-            cardState = isContinueFromPrev ? 'inter_move' : 'outbound';
-
-            const moveTotal = Math.max(1, sM - departMins);
-            const ratio = Math.max(0, Math.min(1, (curMins - departMins) / moveTotal));
-
-            if (fromLatLng && isOhanaVisible && map && window.google && google.maps.geometry) {
-              if (!isContinueFromPrev && yataiLatLng) {
-                const yataiEscortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, isRear ? 'rear' : 'front');
-                fromLatLng = new google.maps.LatLng(yataiEscortCoords.lat, yataiEscortCoords.lng);
-              }
-
-              const curMoveLatLng = google.maps.geometry.spherical.interpolate(fromLatLng, opLatLng, ratio);
-
-              // 誘導破線（矢印付き）
-              const tripLine = new google.maps.Polyline({
-                path: [fromLatLng, curMoveLatLng, opLatLng],
-                strokeColor: isContinueFromPrev ? '#9B2C2C' : '#D53F8C',
-                strokeOpacity: 0,
-                icons: [{
-                  icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 2.2 },
-                  offset: '0',
-                  repeat: '10px'
-                }, {
-                  icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2, fillColor: isContinueFromPrev ? '#9B2C2C' : '#D53F8C', fillOpacity: 1 },
-                  offset: '75%'
-                }],
-                map: map,
-                zIndex: 8700
-              });
-              ohanaTripPolylines.push(tripLine);
-
-              // 移動マーカー
-              const moveType = isContinueFromPrev ? 'inter_point' : 'outbound';
-              const moveMarker = new google.maps.Marker({
-                position: curMoveLatLng,
-                map: map,
-                icon: createOhanaMovingMarkerIcon(moveType, op.name, sectionLabel),
-                title: isContinueFromPrev ? `[地点間移動] ${sectionLabel}（${prevOp.name} ➔ ${op.name}）` : `[回収へ急行中] ${sectionLabel} ➔ ${op.name}`,
-                zIndex: 9800
-              });
-              moveMarker.addListener('click', () => openOhanaModalById(op.id));
-              ohanaMovingMarkers.push(moveMarker);
-            }
-
-            const rem = Math.ceil(sM - curMins);
-            statusNote = `あと${rem}分で到着`;
-            const fromText = isContinueFromPrev ? `${prevOp.name}` : `屋台`;
-            dispatchedOhanaList.push(`${sectionLabel} (${fromText}➔${op.name}へ移動中・あと${rem}分)`);
-
-          } else if (curMins >= sM && curMins <= eM) {
-            // --- フェーズ2: 回収中 ---
+          // 状態の判定
+          if (curMins >= activeStartMins && curMins <= activeEndMins) {
+            // ★ 強調表示期間内！
             markerState = 'active';
-            cardState = 'active';
-            if (isRear) isRearDispatched = true; else isFrontDispatched = true;
-            activeOhanaList.push(`${op.name} (${sectionLabel})`);
 
-          } else if (curMins > eM) {
-            // --- フェーズ3: 回収終了後（連続移動 または 屋台帰還） ---
-            if (isContinueToNext) {
-              const nextStartM = timeToMinutes(nextOp.startTime || "00:00");
-              if (curMins < nextStartM) {
-                markerState = 'past';
-                cardState = 'inter_move';
-                if (isRear) isRearDispatched = true; else isFrontDispatched = true;
+            if (curMins < sM) {
+              // フェーズ1: 移動・急行中
+              if (isRear) isRearDispatched = true; else isFrontDispatched = true;
+              subState = isContinueFromPrev ? 'inter_move' : 'outbound';
+              cardState = subState;
 
-                const interTotal = Math.max(1, nextStartM - eM);
-                const ratio = Math.max(0, Math.min(1, (curMins - eM) / interTotal));
-                const nextOpLatLng = new google.maps.LatLng(nextOp.lat, nextOp.lng);
+              const moveTotal = Math.max(1, sM - departMins);
+              const ratio = Math.max(0, Math.min(1, (curMins - departMins) / moveTotal));
 
-                if (isOhanaVisible && map && window.google && google.maps.geometry) {
-                  const curInterLatLng = google.maps.geometry.spherical.interpolate(opLatLng, nextOpLatLng, ratio);
-
-                  const interLine = new google.maps.Polyline({
-                    path: [opLatLng, curInterLatLng, nextOpLatLng],
-                    strokeColor: '#9B2C2C',
-                    strokeOpacity: 0,
-                    icons: [{
-                      icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 2.2 },
-                      offset: '0',
-                      repeat: '10px'
-                    }, {
-                      icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2, fillColor: '#9B2C2C', fillOpacity: 1 },
-                      offset: '75%'
-                    }],
-                    map: map,
-                    zIndex: 8700
-                  });
-                  ohanaTripPolylines.push(interLine);
-
-                  const interMarker = new google.maps.Marker({
-                    position: curInterLatLng,
-                    map: map,
-                    icon: createOhanaMovingMarkerIcon('inter_point', nextOp.name, sectionLabel),
-                    title: `[連続回収移動] ${sectionLabel}（${op.name} ➔ ${nextOp.name}へ移動中）`,
-                    zIndex: 9800
-                  });
-                  interMarker.addListener('click', () => openOhanaModalById(nextOp.id));
-                  ohanaMovingMarkers.push(interMarker);
+              if (fromLatLng && isOhanaVisible && map && window.google && google.maps.geometry) {
+                if (!isContinueFromPrev && yataiLatLng) {
+                  const yataiEscortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, isRear ? 'rear' : 'front');
+                  fromLatLng = new google.maps.LatLng(yataiEscortCoords.lat, yataiEscortCoords.lng);
                 }
 
-                const rem = Math.ceil(nextStartM - curMins);
-                statusNote = `あと${rem}分で${nextOp.name}到着`;
-                dispatchedOhanaList.push(`${sectionLabel} (${op.name}➔${nextOp.name}へ連続移動中・あと${rem}分)`);
-              } else {
-                markerState = 'past';
-                cardState = 'past';
+                const curMoveLatLng = google.maps.geometry.spherical.interpolate(fromLatLng, opLatLng, ratio);
+
+                // 誘導破線（矢印付き）
+                const tripLine = new google.maps.Polyline({
+                  path: [fromLatLng, curMoveLatLng, opLatLng],
+                  strokeColor: isContinueFromPrev ? '#9B2C2C' : '#D53F8C',
+                  strokeOpacity: 0,
+                  icons: [{
+                    icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 2.2 },
+                    offset: '0',
+                    repeat: '10px'
+                  }, {
+                    icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2, fillColor: isContinueFromPrev ? '#9B2C2C' : '#D53F8C', fillOpacity: 1 },
+                    offset: '75%'
+                  }],
+                  map: map,
+                  zIndex: 8700
+                });
+                ohanaTripPolylines.push(tripLine);
+
+                // 移動マーカー
+                const moveMarker = new google.maps.Marker({
+                  position: curMoveLatLng,
+                  map: map,
+                  icon: createOhanaMovingMarkerIcon(subState, op.name, sectionLabel),
+                  title: isContinueFromPrev ? `[地点間移動] ${sectionLabel}（${prevOp.name} ➔ ${op.name}）` : `[回収へ急行中] ${sectionLabel} ➔ ${op.name}`,
+                  zIndex: 9800
+                });
+                moveMarker.addListener('click', () => openOhanaModalById(op.id));
+                ohanaMovingMarkers.push(moveMarker);
               }
-            } else {
-              // 屋台へ帰還
-              const arriveMins = eM + dur;
-              if (curMins <= arriveMins) {
-                markerState = 'past';
-                cardState = 'inbound';
-                if (isRear) isRearDispatched = true; else isFrontDispatched = true;
 
-                const ratio = Math.max(0, Math.min(1, (curMins - eM) / dur));
+              const rem = Math.ceil(sM - curMins);
+              statusNote = `あと${rem}分で到着`;
+              const fromText = isContinueFromPrev ? `${prevOp.name}` : `屋台`;
+              dispatchedOhanaList.push(`${sectionLabel} (${fromText}➔${op.name}へ移動中・あと${rem}分)`);
 
-                if (yataiLatLng && isOhanaVisible && map && window.google && google.maps.geometry) {
-                  const targetEscortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, isRear ? 'rear' : 'front');
-                  const targetEscortLatLng = new google.maps.LatLng(targetEscortCoords.lat, targetEscortCoords.lng);
-                  const curReturnLatLng = google.maps.geometry.spherical.interpolate(opLatLng, targetEscortLatLng, ratio);
+            } else if (curMins >= sM && curMins <= eM) {
+              // フェーズ2: 回収作業中
+              if (isRear) isRearDispatched = true; else isFrontDispatched = true;
+              subState = 'active';
+              cardState = 'active';
+              activeOhanaList.push(`${op.name} (${sectionLabel})`);
 
-                  const returnLine = new google.maps.Polyline({
-                    path: [opLatLng, curReturnLatLng, targetEscortLatLng],
-                    strokeColor: '#2B6CB0',
-                    strokeOpacity: 0,
-                    icons: [{
-                      icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 2.2 },
-                      offset: '0',
-                      repeat: '10px'
-                    }, {
-                      icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2, fillColor: '#2B6CB0', fillOpacity: 1 },
-                      offset: '75%'
-                    }],
-                    map: map,
-                    zIndex: 8700
-                  });
-                  ohanaTripPolylines.push(returnLine);
+            } else if (curMins > eM) {
+              // フェーズ3: 回収終了後・屋台への帰還中（単独、またはチェーン最終地点）
+              if (isRear) isRearDispatched = true; else isFrontDispatched = true;
+              subState = 'inbound';
+              cardState = 'inbound';
 
-                  const returnMarker = new google.maps.Marker({
-                    position: curReturnLatLng,
-                    map: map,
-                    icon: createOhanaMovingMarkerIcon('inbound', op.name, sectionLabel),
-                    title: `[屋台へ帰還中] ${sectionLabel}（${op.name} ➔ 屋台へ復帰中）`,
-                    zIndex: 9800
-                  });
-                  returnMarker.addListener('click', () => openOhanaModalById(op.id));
-                  ohanaMovingMarkers.push(returnMarker);
-                }
+              const ratio = Math.max(0, Math.min(1, (curMins - eM) / dur));
 
-                const rem = Math.ceil(arriveMins - curMins);
-                statusNote = `あと${rem}分で屋台合流`;
-                dispatchedOhanaList.push(`${sectionLabel} (${op.name}➔屋台へ帰還中・あと${rem}分)`);
-              } else {
-                markerState = 'past';
-                cardState = 'past';
+              if (yataiLatLng && isOhanaVisible && map && window.google && google.maps.geometry) {
+                const targetEscortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, isRear ? 'rear' : 'front');
+                const targetEscortLatLng = new google.maps.LatLng(targetEscortCoords.lat, targetEscortCoords.lng);
+                const curReturnLatLng = google.maps.geometry.spherical.interpolate(opLatLng, targetEscortLatLng, ratio);
+
+                const returnLine = new google.maps.Polyline({
+                  path: [opLatLng, curReturnLatLng, targetEscortLatLng],
+                  strokeColor: '#2B6CB0',
+                  strokeOpacity: 0,
+                  icons: [{
+                    icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 2.2 },
+                    offset: '0',
+                    repeat: '10px'
+                  }, {
+                    icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2, fillColor: '#2B6CB0', fillOpacity: 1 },
+                    offset: '75%'
+                  }],
+                  map: map,
+                  zIndex: 8700
+                });
+                ohanaTripPolylines.push(returnLine);
+
+                const returnMarker = new google.maps.Marker({
+                  position: curReturnLatLng,
+                  map: map,
+                  icon: createOhanaMovingMarkerIcon('inbound', op.name, sectionLabel),
+                  title: `[屋台へ帰還中] ${sectionLabel}（${op.name} ➔ 屋台へ復帰中）`,
+                  zIndex: 9800
+                });
+                returnMarker.addListener('click', () => openOhanaModalById(op.id));
+                ohanaMovingMarkers.push(returnMarker);
               }
+
+              const rem = Math.ceil(activeEndMins - curMins);
+              statusNote = `あと${rem}分で屋台合流`;
+              dispatchedOhanaList.push(`${sectionLabel} (${op.name}➔屋台へ帰還中・あと${rem}分)`);
             }
+          } else if (curMins > activeEndMins) {
+            // ★ 強調表示期間終了後（回収完了済み）
+            markerState = 'past';
+            cardState = 'past';
+          } else {
+            // ★ 強調表示期間前（待機中）
+            markerState = 'waiting';
+            cardState = 'waiting';
           }
 
-          // 地点マーカーのアイコン更新
-          const marker = ohanaMarkers[idx];
+          // ★ 地点マーカーのアイコン＆zIndex更新（正しいインデックスで取得！）
+          const origIdx = (appState.ohanaPoints || []).findIndex(o => o.id === op.id);
+          const marker = origIdx >= 0 ? ohanaMarkers[origIdx] : null;
           if (marker) {
-            marker.setIcon(createOhanaMarkerIcon(op, markerState));
+            marker.setIcon(createOhanaMarkerIcon(op, markerState, subState));
             marker.setZIndex(markerState === 'active' ? 9500 : 200);
           }
 
