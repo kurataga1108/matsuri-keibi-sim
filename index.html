@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -22,12 +22,14 @@
       --pass: #4a5568;
     }
 
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
+
 
     body {
       background-color: #f7fafc;
@@ -37,6 +39,7 @@
       height: 100vh;
       overflow: hidden;
     }
+
 
     /* ログイン画面 */
     #login-overlay {
@@ -52,6 +55,7 @@
       z-index: 99999;
     }
 
+
     .login-card {
       background: var(--white);
       border-radius: 12px;
@@ -61,6 +65,7 @@
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
       text-align: center;
     }
+
 
     .login-card h2 {
       color: var(--primary);
@@ -72,16 +77,19 @@
       gap: 8px;
     }
 
+
     .login-card p.subtitle {
       color: var(--gray);
       font-size: 13px;
       margin-bottom: 24px;
     }
 
+
     .form-group {
       margin-bottom: 14px;
       text-align: left;
     }
+
 
     .form-group label {
       display: block;
@@ -90,6 +98,7 @@
       margin-bottom: 5px;
       color: var(--dark);
     }
+
 
     .form-control {
       width: 100%;
@@ -101,10 +110,12 @@
       transition: border-color 0.2s;
     }
 
+
     .form-control:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 2px rgba(197, 48, 48, 0.2);
     }
+
 
     .btn {
       display: inline-flex;
@@ -120,6 +131,7 @@
       transition: all 0.2s;
     }
 
+
     .btn-primary { background-color: var(--primary); color: var(--white); }
     .btn-primary:hover { background-color: var(--primary-dark); }
     .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--dark); }
@@ -127,12 +139,14 @@
     .btn-danger { background-color: var(--danger); color: var(--white); }
     .btn-block { width: 100%; }
 
+
     .login-error {
       color: var(--danger);
       font-size: 13px;
       margin-top: 12px;
       display: none;
     }
+
 
     /* アプリメインヘッダー */
     header {
@@ -147,6 +161,7 @@
       z-index: 10;
     }
 
+
     .header-title {
       display: flex;
       align-items: center;
@@ -155,6 +170,7 @@
       font-weight: bold;
       color: var(--primary);
     }
+
 
     .header-title span.badge {
       background: var(--primary-light);
@@ -165,11 +181,13 @@
       border: 1px solid rgba(197, 48, 48, 0.2);
     }
 
+
     .header-actions {
       display: flex;
       align-items: center;
       gap: 8px;
     }
+
 
     /* メインレイアウト */
     #app-container {
@@ -179,6 +197,7 @@
       position: relative;
       overflow: hidden;
     }
+
 
     /* サイドバー */
     #sidebar {
@@ -191,11 +210,13 @@
       z-index: 20;
     }
 
+
     .sidebar-tabs {
       display: flex;
       border-bottom: 1px solid var(--border);
       background: #fafafa;
     }
+
 
     .tab-btn {
       flex: 1;
@@ -211,11 +232,13 @@
       transition: all 0.2s;
     }
 
+
     .tab-btn.active {
       color: var(--primary);
       border-bottom-color: var(--primary);
       background: var(--white);
     }
+
 
     .tab-content {
       flex: 1;
@@ -224,7 +247,9 @@
       display: none;
     }
 
+
     .tab-content.active { display: block; }
+
 
     /* 地図エリア */
     #map-wrapper {
@@ -233,7 +258,9 @@
       background: #e2e8f0;
     }
 
+
     #map { width: 100%; height: 100%; }
+
 
     .map-floating-bar {
       position: absolute;
@@ -250,6 +277,7 @@
       flex-wrap: wrap;
     }
 
+
     .tool-btn {
       padding: 7px 11px;
       font-size: 12px;
@@ -264,11 +292,13 @@
       color: var(--dark);
     }
 
+
     .tool-btn.active {
       background: var(--primary);
       color: var(--white);
       border-color: var(--primary);
     }
+
 
     .map-toggle-label {
       font-size: 12px;
@@ -280,6 +310,7 @@
       color: var(--dark);
       user-select: none;
     }
+
 
     /* 下部タイムラインバー */
     #timeline-bar {
@@ -294,12 +325,14 @@
       z-index: 25;
     }
 
+
     .playback-controls {
       display: flex;
       align-items: center;
       gap: 6px;
       flex-shrink: 0; /* 幅を固定 */
     }
+
 
     .time-display {
       font-size: 18px;
@@ -311,6 +344,7 @@
       font-variant-numeric: tabular-nums;
     }
 
+
     .slider-container {
       flex: 1;
       min-width: 0;   /* 画面幅に合わせて伸縮し、子要素に押し広げられないように固定 */
@@ -319,6 +353,7 @@
       gap: 4px;
     }
 
+
     .slider-labels {
       display: flex;
       justify-content: space-between;
@@ -326,11 +361,13 @@
       color: var(--gray);
     }
 
+
     #time-slider {
       width: 100%;
       cursor: pointer;
       accent-color: var(--primary);
     }
+
 
     /* 右側のステータス枠（幅は固定） */
     .status-summary {
@@ -344,11 +381,13 @@
       cursor: help;
     }
 
+
     .status-summary div {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
 
     /* カーソルを合わせた時に上に浮き出る吹き出し */
     .status-summary:hover::after {
@@ -369,6 +408,7 @@
       pointer-events: none;
     }
 
+
     /* 吹き出しの三角矢印 */
     .status-summary:hover::before {
       content: "";
@@ -381,6 +421,7 @@
       z-index: 1000;
     }
 
+
     /* 地点リストカード */
     .checkpoint-card {
       background: var(--white);
@@ -391,16 +432,19 @@
       transition: all 0.2s;
     }
 
+
     .checkpoint-card.active-guarding {
       border: 2px solid var(--danger);
       background: #fff5f5;
       box-shadow: 0 0 8px rgba(229, 62, 62, 0.3);
     }
 
+
     .checkpoint-card.past-guarding {
       opacity: 0.6;
       background: #f7fafc;
     }
+
 
     .cp-header {
       display: flex;
@@ -408,6 +452,7 @@
       align-items: center;
       margin-bottom: 5px;
     }
+
 
     .cp-badge {
       display: inline-flex;
@@ -421,12 +466,14 @@
       color: #fff;
     }
 
+
     .cp-title {
       font-weight: bold;
       font-size: 13px;
       margin-left: 6px;
       flex: 1;
     }
+
 
     .live-status-pill {
       font-size: 10px;
@@ -439,10 +486,12 @@
     .status-waiting { background: #edf2f7; color: #718096; }
     .status-ended { background: #e2e8f0; color: #a0aec0; }
 
+
     @keyframes blink {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.6; }
     }
+
 
     .cp-meta-grid {
       display: grid;
@@ -457,12 +506,14 @@
       border: 1px solid #edf2f7;
     }
 
+
     .cp-tags {
       display: flex;
       flex-wrap: wrap;
       gap: 4px;
       margin-top: 5px;
     }
+
 
     .tag {
       background: #edf2f7;
@@ -471,6 +522,7 @@
       padding: 1px 5px;
       border-radius: 3px;
     }
+
 
     /* ルート通過・休憩点リストアイテム */
     .waypoint-card {
@@ -483,9 +535,11 @@
       font-size: 12px;
     }
 
+
     .waypoint-card.is-pass {
       border-left-color: var(--pass);
     }
+
 
     /* 班別タイムライン */
     .team-block {
@@ -496,6 +550,7 @@
       margin-bottom: 12px;
     }
 
+
     .team-header {
       display: flex;
       align-items: center;
@@ -505,6 +560,7 @@
       margin-bottom: 8px;
     }
 
+
     .team-color-dot {
       width: 12px;
       height: 12px;
@@ -513,6 +569,7 @@
       margin-right: 6px;
     }
 
+
     .team-step {
       display: flex;
       align-items: flex-start;
@@ -520,6 +577,7 @@
       font-size: 12px;
       margin-bottom: 6px;
     }
+
 
     .team-move-alert {
       background: #fffaf0;
@@ -531,6 +589,7 @@
       margin: 6px 0 8px 18px;
     }
 
+
     /* 懸念点レポート */
     .report-card {
       border-left: 4px solid var(--primary);
@@ -541,9 +600,11 @@
       font-size: 12px;
     }
 
+
     .report-card.warning { border-left-color: var(--warning); background: #fffaf0; }
     .report-card.danger { border-left-color: var(--danger); background: #fff5f5; }
     .report-title { font-weight: bold; margin-bottom: 3px; font-size: 13px; }
+
 
     /* モーダル */
     .modal-overlay {
@@ -559,6 +620,7 @@
       z-index: 10000;
     }
 
+
     .modal-content {
       background: var(--white);
       border-radius: 10px;
@@ -570,6 +632,7 @@
       box-shadow: 0 10px 15px rgba(0,0,0,0.2);
     }
 
+
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -579,6 +642,7 @@
       padding-bottom: 8px;
     }
 
+
     .modal-header h3 { font-size: 16px; color: var(--primary); }
     .modal-footer { margin-top: 18px; display: flex; justify-content: flex-end; gap: 8px; }
   /* PC表示時はスマホ専用要素を完全非表示 */
@@ -586,10 +650,12 @@
       display: none !important;
     }
 
+
     /* タイムラインのPC・スマホ両立ラッパー（PCでは直下と同じ扱い） */
     .timeline-controls-row {
       display: contents;
     }
+
 
     /* ========================================================
        ★★★ スマホ専用レスポンシブスタイル (画面幅768px以下) ★★★
@@ -601,6 +667,7 @@
       .pc-only {
         display: none !important;
       }
+
 
       /* ヘッダーの最適化 */
       header {
@@ -622,6 +689,7 @@
         font-size: 11px;
         gap: 3px;
       }
+
 
       /* スマホ用ナビゲーションバー（地図 / リスト切り替え） */
       #mobile-nav-bar {
@@ -653,11 +721,13 @@
         background: #fff5f5;
       }
 
+
       /* メイン作業エリア：スマホの画面高さに合わせてフィット */
       #app-container {
         height: calc(100vh - 48px - 40px - 88px); /* ヘッダー48 + ナビ40 + タイムライン88 */
         flex-direction: column;
       }
+
 
       /* サイドバー（リスト画面時） */
       #sidebar {
@@ -670,6 +740,7 @@
         display: flex !important;
         flex: 1;
       }
+
 
       /* サイドバー各タブの横スクロール対応（6タブがスマホでも綺麗に収まる） */
       .sidebar-tabs {
@@ -690,6 +761,7 @@
         font-size: 12px;
       }
 
+
       /* 地図エリア（地図画面時） */
       #map-wrapper {
         width: 100% !important;
@@ -700,6 +772,7 @@
         display: block !important;
         flex: 1;
       }
+
 
       /* 地図上の操作バーのスマホ最適化（閲覧中心・横スクロール） */
       .map-floating-bar {
@@ -727,6 +800,7 @@
         flex-shrink: 0;
         margin-left: 4px;
       }
+
 
       /* 下部タイムラインバーのスマホ最適化（2段組レイアウト） */
       #timeline-bar {
@@ -769,6 +843,7 @@
         font-size: 9px;
       }
 
+
       /* ステータス枠（スマホでは横幅100%で視認性抜群） */
       .status-summary {
         width: 100% !important;
@@ -783,6 +858,7 @@
         text-overflow: ellipsis;
       }
 
+
       /* ログイン画面のスマホ最適化 */
       .login-card {
         padding: 24px 18px;
@@ -792,6 +868,7 @@
       .login-card h2 {
         font-size: 18px;
       }
+
 
       /* モーダルウィンドウのスマホ最適化 */
       .modal-content {
@@ -804,10 +881,12 @@
 </head>
 <body>
 
+
   <!-- 1. 設定項目（APIキー & ログイン情報） -->
   <script>
     // 【重要】取得したGoogle Maps APIキーを貼り付けてください
     const GOOGLE_MAPS_API_KEY = "AIzaSyDmuD2NxDm78w88tg6UX-ETzf4Xg7VTbpo"; 
+
 
     // ログイン情報の設定
     const AUTH_CONFIG = {
@@ -816,11 +895,13 @@
     };
   </script>
 
+
   <!-- 2. ログイン画面 -->
   <div id="login-overlay">
     <div class="login-card">
       <h2>🏮 屋台巡行 警備システム</h2>
       <p class="subtitle">自治会関係者専用 警備計画・シミュレータ</p>
+
 
       <form id="login-form">
         <div class="form-group">
@@ -840,6 +921,7 @@
       </form>
     </div>
   </div>
+
 
   <!-- 3. アプリメインヘッダー -->
   <header>
@@ -862,6 +944,7 @@
     </div>
   </header>
 
+
   <!-- 3.5. スマホ用ナビゲーションバー（地図 / 計画リスト切り替え） -->
   <div id="mobile-nav-bar" class="mobile-only">
     <button id="mobile-tab-map" class="mobile-nav-btn active" onclick="switchMobileView('map')">
@@ -871,6 +954,7 @@
       📋 計画・地点リスト
     </button>
   </div>
+
 
   <!-- 4. メイン作業エリア -->
   <div id="app-container">
@@ -883,6 +967,7 @@
         <button class="tab-btn" onclick="switchTab('tab-teams', event)">班別移動表</button>
         <button class="tab-btn" onclick="switchTab('tab-report', event)">懸念点診断</button>
       </div>
+
 
       <!-- タブ1: 巡行計画・ルート設定 -->
       <div id="tab-route" class="tab-content active">
@@ -900,6 +985,7 @@
             <input type="time" id="plan-end-time" class="form-control" value="17:00" onchange="updateTimelineSettings()">
           </div>
         </div>
+
 
         <div style="background: var(--light-gray); padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 13px;">
           <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
@@ -920,11 +1006,13 @@
           </div>
         </div>
 
+
         <div style="display:flex; gap:8px; margin-top:14px;">
           <button class="btn btn-outline" style="flex:1;" onclick="undoRoutePoint()">↩ 1点戻す</button>
           <button class="btn btn-outline" style="flex:1; color:var(--danger); border-color:var(--border);" onclick="clearRoute()">🗑️ 全消去</button>
         </div>
       </div>
+
 
       <!-- タブ2: 警備地点一覧 -->
       <div id="tab-checkpoints" class="tab-content">
@@ -944,8 +1032,29 @@
         <div id="checkpoint-list-container"></div>
       </div>
 
+
       <!-- タブ: 御花回収地点一覧 -->
       <div id="tab-ohana" class="tab-content">
+        <!-- 御花回収班の体制（屋台常時随行）設定カード -->
+        <div style="background:#ebf8ff; border:1px solid #bee3f8; border-radius:6px; padding:10px; margin-bottom:12px;">
+          <div style="font-size:12px; font-weight:bold; color:#2B6CB0; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+            <span>🌸 御花回収班の体制（屋台常時随行）</span>
+            <span id="ohana-total-count" style="font-size:11px; background:#2B6CB0; color:#fff; padding:1px 7px; border-radius:10px;">合計 4名</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#2C5282; font-weight:bold;">屋台前方 担当人数</label>
+              <input type="number" id="ohana-front-count" class="form-control" min="0" max="20" value="2" onchange="updateOhanaConfig()" style="padding:4px 8px; font-size:12px;">
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:11px; color:#2C5282; font-weight:bold;">屋台後方 担当人数</label>
+              <input type="number" id="ohana-rear-count" class="form-control" min="0" max="20" value="2" onchange="updateOhanaConfig()" style="padding:4px 8px; font-size:12px;">
+            </div>
+          </div>
+          <div style="font-size:10px; color:#2B6CB0; margin-top:4px;">
+            ※ 御花係は常時屋台の前後に随行し、各回収時間に合わせて屋台を離脱・回収・帰還します。
+          </div>
+        </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:6px;">
           <span style="font-size:12px; color:var(--gray);">御花（祝儀）回収場所を管理</span>
           <button class="btn btn-outline" style="padding:5px 8px; font-size:11px; color:var(--danger); border-color:var(--border);" onclick="clearAllOhana()">🗑️ 全消去</button>
@@ -968,6 +1077,7 @@
         <div id="waypoint-list-container"></div>
       </div>
 
+
       <!-- タブ4: 担当班別タイムスケジュール & 移動表 -->
       <div id="tab-teams" class="tab-content">
         <div style="margin-bottom:10px; font-size:12px; color:var(--gray);">
@@ -975,6 +1085,7 @@
         </div>
         <div id="team-schedule-container"></div>
       </div>
+
 
       <!-- タブ5: 懸念点診断・出力 -->
       <div id="tab-report" class="tab-content">
@@ -993,6 +1104,7 @@
         </div>
       </div>
     </div>
+
 
     <!-- 右側マップエリア -->
     <div id="map-wrapper">
@@ -1022,6 +1134,7 @@
     </div>
   </div>
 
+
   <!-- 5. 下部タイムラインシミュレーター -->
   <div id="timeline-bar">
     <div class="timeline-controls-row">
@@ -1036,7 +1149,9 @@
         </select>
       </div>
 
+
       <div class="time-display" id="sim-current-time">13:00</div>
+
 
       <div class="slider-container">
         <div class="slider-labels">
@@ -1048,6 +1163,7 @@
       </div>
     </div>
 
+
     <div class="status-summary" onclick="showStatusDetailsMobile()">
       <div>屋台状態: <strong id="yatai-location-text">出発地点</strong></div>
       <div style="font-size:11px; margin-top:2px;">
@@ -1055,6 +1171,7 @@
       </div>
     </div>
   </div>
+
 
   <!-- 6. 警備地点編集モーダル -->
   <div class="modal-overlay" id="checkpoint-modal">
@@ -1065,6 +1182,7 @@
       </div>
       <form id="checkpoint-form" onsubmit="saveCheckpointModal(event)">
         <input type="hidden" id="modal-cp-id">
+
 
         <!-- 警備形態の選択（定点警備 vs 屋台随行警備） -->
         <div class="form-group" style="background:#f7fafc; padding:8px 10px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:12px;">
@@ -1081,6 +1199,7 @@
           </div>
         </div>
 
+
         <!-- 屋台随行の場合の前後左右ポジション -->
         <div class="form-group" id="group-escort-position" style="display:none; background:#fffaf0; border:1px solid #feebc8; border-radius:6px; padding:10px; margin-bottom:12px;">
           <label style="color:#c05621; font-weight:bold; margin-bottom:4px; font-size:12px;">屋台の護衛位置（進行方向に追従）</label>
@@ -1095,6 +1214,7 @@
           </div>
         </div>
 
+
         <div style="display:flex; gap:8px;">
           <div class="form-group" style="width:75px;" id="group-cp-symbol">
             <label>記号</label>
@@ -1106,6 +1226,7 @@
           </div>
         </div>
 
+
         <div style="display:flex; gap:8px;">
           <div class="form-group" style="flex:1;">
             <label>担当班</label>
@@ -1116,6 +1237,7 @@
             <input type="number" id="modal-cp-guards" class="form-control" min="0" max="50" value="2" required>
           </div>
         </div>
+
 
         <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:10px; margin-bottom:12px;">
           <div style="font-size:11px; font-weight:bold; color:var(--danger); margin-bottom:6px;">警備配置時間帯</div>
@@ -1131,6 +1253,7 @@
           </div>
         </div>
 
+
         <div class="form-group" id="group-cp-risk">
           <label>警戒内容（注意点・リスク）</label>
           <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:5px;">
@@ -1145,12 +1268,14 @@
           <input type="text" id="modal-cp-risk" class="form-control" placeholder="カンマ区切りで入力 (例: 急カーブ, 電線低所)">
         </div>
 
+
         <!-- ★★★ 定点警備終了後の屋台合流設定 ★★★ -->
         <div id="group-fixed-after-action" style="background:#ebf8ff; border:1px solid #bee3f8; border-radius:6px; padding:10px; margin-bottom:12px;">
           <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:bold; color:#2B6CB0; margin-bottom:0; font-size:12px;">
             <input type="checkbox" id="modal-cp-join-yatai" onchange="toggleJoinYataiUI()">
             <span>🚶 この地点の警備終了後、屋台に合流する</span>
           </label>
+
 
           <div id="join-yatai-settings" style="display:none; margin-top:8px; padding-top:8px; border-top:1px dashed #90cdf4;">
             <div style="display:flex; gap:8px;">
@@ -1178,6 +1303,7 @@
           </div>
         </div>
 
+
         <div class="modal-footer">
           <button type="button" class="btn btn-danger" id="modal-btn-delete" onclick="deleteCheckpointFromModal()" style="margin-right:auto;">削除</button>
           <button type="button" class="btn btn-outline" onclick="closeModal('checkpoint-modal')">キャンセル</button>
@@ -1186,6 +1312,7 @@
       </form>
     </div>
   </div>
+
 
   <!-- 御花回収地点モーダル -->
   <div class="modal-overlay" id="ohana-modal">
@@ -1197,15 +1324,33 @@
       <form id="ohana-form" onsubmit="saveOhanaModal(event)">
         <input type="hidden" id="modal-ohana-id">
 
+
         <div class="form-group">
           <label>場所の名称（個人宅・店舗名など）</label>
           <input type="text" id="modal-ohana-name" class="form-control" required placeholder="例: ○○様宅、○○商店前">
         </div>
 
+
         <div class="form-group">
-          <label>担当係 / 担当者</label>
-          <input type="text" id="modal-ohana-person" class="form-control" placeholder="例: 御花係、会計部、田中・佐藤">
+          <label>担当者名・メモ</label>
+          <input type="text" id="modal-ohana-person" class="form-control" placeholder="例: 会計部、田中・佐藤">
         </div>
+
+        <!-- 屋台の前後どちらの係が回収に向かうか -->
+        <div class="form-group" style="background:#f7fafc; padding:8px 10px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:12px;">
+          <label style="font-weight:bold; color:var(--dark); margin-bottom:4px; font-size:12px;">回収担当係（屋台の前後）</label>
+          <div style="display:flex; gap:16px;">
+            <label style="display:flex; align-items:center; gap:5px; font-weight:normal; cursor:pointer; font-size:12px;">
+              <input type="radio" name="modal-ohana-section" value="front" checked>
+              <span>🏮 前方御花係</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:5px; font-weight:normal; cursor:pointer; font-size:12px;">
+              <input type="radio" name="modal-ohana-section" value="rear">
+              <span>🏮 後方御花係</span>
+            </label>
+          </div>
+        </div>
+
 
         <div style="background:#ebf8ff; border:1px solid #bee3f8; border-radius:6px; padding:10px; margin-bottom:12px;">
           <div style="font-size:11px; font-weight:bold; color:#2B6CB0; margin-bottom:6px;">回収時間帯</div>
@@ -1219,12 +1364,37 @@
               <input type="time" id="modal-ohana-end" class="form-control" required>
             </div>
           </div>
+          <div style="display:flex; align-items:center; gap:6px; margin-top:8px; padding-top:8px; border-top:1px dashed #bee3f8;">
+            <label style="font-size:11px; color:#2B6CB0; margin-bottom:0; font-weight:bold; white-space:nowrap;">屋台往復所要時間:</label>
+            <input type="number" id="modal-ohana-movedur" class="form-control" min="1" max="30" value="5" style="width:65px; padding:3px 6px; font-size:11px;">
+            <span style="font-size:11px; color:#2C5282;">分前後に屋台を離脱・帰還 (案A)</span>
+          </div>
         </div>
+
+        <!-- ★★★ 回収完了後の動き（屋台へ帰還 vs 連続回収） ★★★ -->
+        <div class="form-group" style="background:#f7fafc; padding:9px 10px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:12px;">
+          <label style="font-weight:bold; color:var(--dark); margin-bottom:5px; font-size:12px;">回収完了後の動き</label>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <label style="display:flex; align-items:center; gap:6px; font-weight:normal; cursor:pointer; font-size:12px;">
+              <input type="radio" name="modal-ohana-after" value="return_yatai" checked onchange="toggleOhanaAfterUI()">
+              <span>🏮 屋台へ帰還する（単発回収、または連続回収の最終地点）</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:6px; font-weight:normal; cursor:pointer; font-size:12px;">
+              <input type="radio" name="modal-ohana-after" value="continue_next" onchange="toggleOhanaAfterUI()">
+              <span>🌸 連続回収（屋台には戻らず、次の御花地点へ直接移動）</span>
+            </label>
+          </div>
+          <div id="ohana-after-note" style="font-size:10px; color:#2B6CB0; margin-top:5px;">
+            ※ 回収終了後、リアルタイムに進んでいる屋台へ戻る復路ライン・帰還マーカーが表示されます。
+          </div>
+        </div>
+
 
         <div class="form-group">
           <label>メモ・特記事項（受領品、目印など）</label>
           <input type="text" id="modal-ohana-memo" class="form-control" placeholder="例: 玄関先にて受領、金一封">
         </div>
+
 
         <div class="modal-footer">
           <button type="button" class="btn btn-danger" id="modal-ohana-btn-delete" onclick="deleteOhanaFromModal()" style="margin-right:auto;">削除</button>
@@ -1245,6 +1415,7 @@
       <form id="waypoint-form" onsubmit="saveWaypointModal(event)">
         <input type="hidden" id="modal-wp-id">
 
+
         <div class="form-group">
           <label>ポイントの種別</label>
           <div style="display:flex; gap:10px;">
@@ -1259,10 +1430,12 @@
           </div>
         </div>
 
+
         <div class="form-group">
           <label>場所の名称</label>
           <input type="text" id="modal-wp-name" class="form-control" required placeholder="例: 東町公民館前、大手前通り">
         </div>
+
 
         <div style="display:flex; gap:8px;">
           <div class="form-group" style="flex:1;">
@@ -1275,6 +1448,7 @@
           </div>
         </div>
 
+
         <div class="modal-footer">
           <button type="button" class="btn btn-danger" id="modal-wp-btn-delete" onclick="deleteWaypointFromModal()" style="margin-right:auto;">削除</button>
           <button type="button" class="btn btn-outline" onclick="closeModal('waypoint-modal')">キャンセル</button>
@@ -1283,6 +1457,7 @@
       </form>
     </div>
   </div>
+
 
   <!-- 8. APIキー設定モーダル -->
   <div class="modal-overlay" id="apikey-modal">
@@ -1305,6 +1480,7 @@
     </div>
   </div>
 
+
   <!-- 9. アプリケーション本体スクリプト -->
   <script>
     let appState = {
@@ -1322,6 +1498,7 @@
       showTeamPaths: true
     };
 
+
     let map = null;
     let routePolyline = null;
     let checkpointMarkers = [];
@@ -1330,9 +1507,11 @@
     let yataiMarker = null;
     let simInterval = null;
 
+
     const TEAM_COLORS = [
       "#2B6CB0", "#2F855A", "#DD6B20", "#805AD5", "#319795", "#D53F8C", "#C53030", "#4A5568"
     ];
+
 
     function getTeamColor(teamName) {
       if (!teamName || teamName.trim() === "") return "#718096";
@@ -1344,12 +1523,14 @@
       return TEAM_COLORS[idx];
     }
 
+
     // --- ログイン処理 ---
     document.getElementById('login-form').addEventListener('submit', function(e) {
       e.preventDefault();
       const id = document.getElementById('login-id').value.trim();
       const pass = document.getElementById('login-pass').value.trim();
       const remember = document.getElementById('remember-me').checked;
+
 
       if (id === AUTH_CONFIG.defaultId && pass === AUTH_CONFIG.defaultPass) {
         if (remember) {
@@ -1362,6 +1543,7 @@
       }
     });
 
+
     function checkAuthOnLoad() {
       if (localStorage.getItem('yatai_auth') === 'true') {
         document.getElementById('login-overlay').style.display = 'none';
@@ -1369,10 +1551,12 @@
       }
     }
 
+
     function logout() {
       localStorage.removeItem('yatai_auth');
       location.reload();
     }
+
 
     function initAppAfterLogin() {
       loadSavedData();
@@ -1380,10 +1564,12 @@
       initResponsiveView();
     }
 
+
     // ==========================================
     // ★★★ スマホ用ビュー切り替え＆レスポンシブ制御 ★★★
     // ==========================================
     let currentMobileView = 'map'; // スマホ時はデフォルト「地図シミュレータ」
+
 
     function switchMobileView(view) {
       currentMobileView = view;
@@ -1393,12 +1579,14 @@
       const mapWrapper = document.getElementById('map-wrapper');
       const timelineBar = document.getElementById('timeline-bar');
 
+
       if (view === 'map') {
         if (btnMap) btnMap.classList.add('active');
         if (btnList) btnList.classList.remove('active');
         if (sidebar) sidebar.classList.remove('mobile-active');
         if (mapWrapper) mapWrapper.classList.add('mobile-active');
         if (timelineBar) timelineBar.style.display = 'flex'; // 地図時はタイムライン表示
+
 
         // Google Mapsの再計算（タブ切り替え時のグレー表示を防止）
         if (map && window.google && window.google.maps) {
@@ -1417,6 +1605,7 @@
       }
     }
 
+
     // スマホでステータス枠をタップした時の詳細表示
     function showStatusDetailsMobile() {
       if (window.innerWidth <= 768) {
@@ -1427,6 +1616,7 @@
         }
       }
     }
+
 
     function initResponsiveView() {
       if (window.innerWidth <= 768) {
@@ -1442,6 +1632,7 @@
       }
     }
 
+
     window.addEventListener('resize', () => {
       if (window.innerWidth > 768) {
         const sidebar = document.getElementById('sidebar');
@@ -1455,12 +1646,14 @@
       }
     });
 
+
     function getApiKey() {
       if (typeof GOOGLE_MAPS_API_KEY !== 'undefined' && GOOGLE_MAPS_API_KEY.trim() !== "") {
         return GOOGLE_MAPS_API_KEY.trim();
       }
       return localStorage.getItem('yatai_maps_api_key') || "";
     }
+
 
     function initGoogleMaps() {
       const apiKey = getApiKey();
@@ -1469,10 +1662,12 @@
         return;
       }
 
+
       if (window.google && window.google.maps) {
         setupMapInstance();
         return;
       }
+
 
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&callback=setupMapInstance`;
@@ -1485,11 +1680,13 @@
       document.head.appendChild(script);
     }
 
+
     function setupMapInstance() {
       let centerPos = { lat: 34.8394, lng: 134.6939 };
       if (appState.routePoints.length > 0) {
         centerPos = appState.routePoints[0];
       }
+
 
       map = new google.maps.Map(document.getElementById('map'), {
         center: centerPos,
@@ -1500,6 +1697,7 @@
         streetViewControl: false
       });
 
+
       routePolyline = new google.maps.Polyline({
         path: appState.routePoints,
         geodesic: true,
@@ -1509,11 +1707,13 @@
         map: map
       });
 
+
       routePolyline.addListener('click', (e) => {
         if (appState.currentMode === 'add_waypoint') {
           promptAddWaypoint(e.latLng);
         }
       });
+
 
       const yataiIcon = {
         url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
@@ -1526,6 +1726,7 @@
         anchor: new google.maps.Point(21, 21)
       };
 
+
       yataiMarker = new google.maps.Marker({
         position: centerPos,
         map: map,
@@ -1533,6 +1734,7 @@
         title: "屋台現在地",
         zIndex: 9999
       });
+
 
       map.addListener('click', (e) => {
         if (appState.currentMode === 'route') {
@@ -1546,6 +1748,7 @@
         }
       });
 
+
       renderCheckpoints();
       renderOhana();
       renderWaypoints();
@@ -1554,6 +1757,7 @@
       updateTimelineSettings();
       renderTeamScheduleTab();
     }
+
 
     function setMode(mode) {
       appState.currentMode = mode;
@@ -1565,6 +1769,7 @@
       if (mode === 'add_waypoint') document.getElementById('tool-wp').classList.add('active');
     }
 
+
     // --- ルート操作 ---
     function addRoutePoint(latLng) {
       const pt = { lat: latLng.lat(), lng: latLng.lng() };
@@ -1573,6 +1778,7 @@
       updateCalculatedStats();
       saveState();
     }
+
 
     // 直前のクリック地点を1つ取り消す処理
     function undoRoutePoint() {
@@ -1608,16 +1814,19 @@
       }
     }
 
+
     // --- 警備地点操作 ---
     // --- 屋台随行・合流管理用変数 ---
     let escortMarkers = [];        // 屋台直近随行マーカー群
     let joinMovingMarkers = [];    // 屋台合流移動マーカー群
     let joinPolylines = [];        // 屋台合流動線破線群
 
+
     function getPosLabel(pos) {
       const map = { front: "前方", rear: "後方", left: "左側", right: "右側" };
       return map[pos] || "随行";
     }
+
 
     // 屋台の進行方位角（0〜360度）を計算
     function getYataiHeadingAtDist(currentDist, cumDist) {
@@ -1627,6 +1836,7 @@
       const p1 = getPointAtDistance(currentDist, cumDist);
       const forwardDist = Math.min(totalDist, currentDist + 2);
       const p2 = getPointAtDistance(forwardDist, cumDist);
+
 
       if (p1.lat === p2.lat && p1.lng === p2.lng) {
         const backDist = Math.max(0, currentDist - 2);
@@ -1642,6 +1852,7 @@
       );
     }
 
+
     // 屋台現在地と進行方位から「前後左右」の護衛オフセット座標を計算
     function getEscortOffsetCoords(centerLatLng, heading, positionType) {
       if (!window.google || !google.maps.geometry) {
@@ -1649,6 +1860,7 @@
       }
       let dist = 15; // メートル
       let angle = heading;
+
 
       if (positionType === 'front') {
         dist = 17; // 前方17m
@@ -1664,15 +1876,18 @@
         angle = (heading + 90) % 360;
       }
 
+
       const offset = google.maps.geometry.spherical.computeOffset(centerLatLng, dist, angle);
       return { lat: offset.lat(), lng: offset.lng() };
     }
+
 
     // 屋台随行マーカーアイコン（前・後・左・右バッジ）
     function createEscortMarkerIcon(teamName, guardsCount, positionType) {
       const teamColor = getTeamColor(teamName);
       const posLabels = { front: "前", rear: "後", left: "左", right: "右" };
       const label = posLabels[positionType] || "随";
+
 
       return {
         url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
@@ -1686,6 +1901,7 @@
         anchor: new google.maps.Point(19, 19)
       };
     }
+
 
     // 屋台へ移動・合流中のマーカーアイコン
     // 屋台から次の警備地点への先回り移動中マーカーアイコン
@@ -1706,6 +1922,7 @@
       };
     }
 
+
     function createJoiningMarkerIcon(teamName, fromName) {
       const teamColor = getTeamColor(teamName);
       return {
@@ -1723,6 +1940,7 @@
       };
     }
 
+
     // --- 屋台随行＆合流 モーダルUI制御 ---
     function toggleCpTypeUI() {
       const type = document.querySelector('input[name="modal-cp-type"]:checked').value;
@@ -1731,8 +1949,10 @@
       document.getElementById('group-fixed-after-action').style.display = isEscort ? 'none' : 'block';
       document.getElementById('group-cp-risk').style.display = isEscort ? 'none' : 'block';
 
+
       const nameLabel = document.getElementById('label-cp-name');
       const symbolInput = document.getElementById('modal-cp-symbol');
+
 
       if (isEscort) {
         nameLabel.innerText = "警備任務名（屋台随行）";
@@ -1745,12 +1965,14 @@
       }
     }
 
+
     function updateEscortSymbolDefault() {
       const pos = document.getElementById('modal-cp-escort-pos').value;
       const posLabels = { front: "前", rear: "後", left: "左", right: "右" };
       const posNames = { front: "前方(先導)", rear: "後方(殿)", left: "左側", right: "右側" };
       const symbolInput = document.getElementById('modal-cp-symbol');
       const nameInput = document.getElementById('modal-cp-name');
+
 
       const isEscort = document.querySelector('input[name="modal-cp-type"]:checked').value === 'escort';
       if (isEscort) {
@@ -1760,6 +1982,7 @@
         }
       }
     }
+
 
     function toggleJoinYataiUI() {
       const checked = document.getElementById('modal-cp-join-yatai').checked;
@@ -1771,6 +1994,7 @@
         }
       }
     }
+
 
     function promptAddEscortModal() {
       const defaultStart = appState.startTime || "13:00";
@@ -1790,6 +2014,7 @@
       }, true);
     }
 
+
     function getNextSymbol() {
       const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       const used = new Set(appState.checkpoints.map(c => c.symbol));
@@ -1798,6 +2023,7 @@
       }
       return "P" + (appState.checkpoints.length + 1);
     }
+
 
     function promptAddCheckpoint(latLng) {
       const nextSym = getNextSymbol();
@@ -1816,8 +2042,10 @@
       setMode('view');
     }
 
+
     function createGuardMarkerIcon(cp, state) {
       const teamColor = getTeamColor(cp.team);
+
 
       if (state === 'active') {
         return {
@@ -1864,19 +2092,24 @@
       }
     }
 
+
     function renderCheckpoints() {
       checkpointMarkers.forEach(m => m.setMap(null));
       checkpointMarkers = [];
+
 
       const container = document.getElementById('checkpoint-list-container');
       container.innerHTML = "";
       document.getElementById('cp-count').innerText = appState.checkpoints.length;
 
+
       const isVisible = appState.showGuardLayer !== false;
+
 
       appState.checkpoints.forEach((cp) => {
         const isEscort = cp.type === 'escort';
         const teamColor = getTeamColor(cp.team);
+
 
         // 定点警備の場合のみ地図上に固定マーカーを配置
         if (!isEscort) {
@@ -1888,18 +2121,23 @@
             zIndex: 100
           });
 
+
           marker.addListener('click', () => {
             openCheckpointModal(cp, false);
           });
 
+
           checkpointMarkers.push(marker);
         }
+
 
         const card = document.createElement('div');
         card.className = "checkpoint-card";
         card.id = `cp-card-${cp.id}`;
 
+
         const tagsHtml = cp.risk ? cp.risk.split(/[,、]/).map(t => `<span class="tag">${t.trim()}</span>`).join("") : "";
+
 
         let joinBadgeHtml = "";
         if (!isEscort && cp.afterAction === 'join_yatai') {
@@ -1910,7 +2148,9 @@
           `;
         }
 
+
         const escortBadge = isEscort ? `<span style="font-size:10px; background:#fffaf0; color:#c05621; border:1px solid #fbd38d; padding:1px 5px; border-radius:3px; margin-left:4px;">屋台[${getPosLabel(cp.escortPosition)}]随行</span>` : '';
+
 
         card.innerHTML = `
           <div class="cp-header">
@@ -1936,16 +2176,27 @@
         container.appendChild(card);
       });
 
+
       renderTeamMovePaths();
       renderTeamScheduleTab();
       updateCalculatedStats();
     }
 
+
     // --- 御花回収場所操作 ---
     let ohanaMarkers = [];
     if (!appState.ohanaPoints) appState.ohanaPoints = [];
+          if (!appState.ohanaConfig) appState.ohanaConfig = { frontCount: 2, rearCount: 2 };
+
+          const fCountEl = document.getElementById('ohana-front-count');
+          const rCountEl = document.getElementById('ohana-rear-count');
+          const tCountEl = document.getElementById('ohana-total-count');
+          if (fCountEl) fCountEl.value = appState.ohanaConfig.frontCount || 2;
+          if (rCountEl) rCountEl.value = appState.ohanaConfig.rearCount || 2;
+          if (tCountEl) tCountEl.innerText = `合計 ${(appState.ohanaConfig.frontCount || 2) + (appState.ohanaConfig.rearCount || 2)}名`;
     appState.showGuardLayer = true;
     appState.showOhanaLayer = true;
+
 
     // 御花マーカーのアイコン（待機中: 青色ピン / 回収中: 1.5倍大・青色発光パルス・「🌸 回収中」バッジ）
     function createOhanaMarkerIcon(op, state) {
@@ -1994,13 +2245,113 @@
       }
     }
 
+
+    // ==========================================
+    // ★★★ 御花回収班の屋台随行 ＆ 連続回収管理 ★★★
+    // ==========================================
+    let yataiOhanaMarkers = [];    // 屋台随行御花マーカー（前・後）
+    let ohanaTripPolylines = [];   // 御花往復動線破線群
+    let ohanaMovingMarkers = [];   // 御花急行・帰還・地点間移動マーカー群
+
+    if (!appState.ohanaConfig) {
+      appState.ohanaConfig = { frontCount: 2, rearCount: 2 };
+    }
+
+    function updateOhanaConfig() {
+      const front = parseInt(document.getElementById('ohana-front-count').value, 10) || 0;
+      const rear = parseInt(document.getElementById('ohana-rear-count').value, 10) || 0;
+      appState.ohanaConfig = { frontCount: front, rearCount: rear };
+      const totalEl = document.getElementById('ohana-total-count');
+      if (totalEl) totalEl.innerText = "合計 " + (front + rear) + "名";
+      saveState();
+      updateSimulationDisplay();
+    }
+
+    function toggleOhanaAfterUI() {
+      const afterVal = (document.querySelector('input[name="modal-ohana-after"]:checked') || {}).value || 'return_yatai';
+      const noteEl = document.getElementById('ohana-after-note');
+      if (noteEl) {
+        if (afterVal === 'return_yatai') {
+          noteEl.innerText = "※ 回収終了後、リアルタイムに進んでいる屋台へ戻る復路ライン・帰還マーカーが表示されます。";
+          noteEl.style.color = "#2B6CB0";
+        } else {
+          noteEl.innerText = "※ 回収終了後、屋台には戻らず同じ係の次の御花地点へ直接移動する破線・マーカーが表示されます。";
+          noteEl.style.color = "#D53F8C";
+        }
+      }
+    }
+
+    // 屋台前後に随行する御花係のアイコン（前・後）
+    function createYataiOhanaIcon(section, count, isDispatched) {
+      const label = section === 'rear' ? '花(後)' : '花(前)';
+      const bg = isDispatched ? '#CBD5E0' : '#D53F8C';
+      const border = isDispatched ? '#718096' : '#FFFFFF';
+      const statusText = isDispatched ? '離脱中' : (count + '名');
+
+      return {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+            <circle cx="20" cy="20" r="17" fill="${bg}" stroke="${border}" stroke-width="2.5" opacity="0.95"/>
+            <text x="20" y="16" font-size="10" font-weight="900" text-anchor="middle" fill="#FFFFFF">${label}</text>
+            <text x="20" y="27" font-size="8" font-weight="bold" text-anchor="middle" fill="#FFFFFF">${statusText}</text>
+          </svg>
+        `),
+        scaledSize: new google.maps.Size(40, 40),
+        anchor: new google.maps.Point(20, 20)
+      };
+    }
+
+    // 移動中の御花係アイコン（往路、復路、地点間移動）
+    function createOhanaMovingMarkerIcon(type, placeName, sectionLabel) {
+      let actionText = '回収へ急行中';
+      let iconChar = '🌸';
+      let color = '#D53F8C';
+
+      if (type === 'outbound') {
+        actionText = '回収へ急行中';
+        iconChar = '🌸';
+        color = '#D53F8C';
+      } else if (type === 'inbound') {
+        actionText = '屋台へ帰還中';
+        iconChar = '🏃';
+        color = '#2B6CB0';
+      } else if (type === 'inter_point') {
+        actionText = '次地点へ移動中';
+        iconChar = '🚶';
+        color = '#9B2C2C';
+      }
+
+      return {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="118" height="36" viewBox="0 0 118 36">
+            <rect x="2" y="2" width="114" height="32" rx="7" fill="#FFFFFF" stroke="${color}" stroke-width="2.2"/>
+            <circle cx="17" cy="18" r="11" fill="${color}"/>
+            <text x="17" y="22" font-size="11" text-anchor="middle" fill="#FFFFFF">${iconChar}</text>
+            <text x="32" y="16" font-size="9" font-weight="bold" fill="${color}">${sectionLabel}</text>
+            <text x="32" y="28" font-size="9" font-weight="bold" fill="#2D3748">${actionText}</text>
+          </svg>
+        `),
+        scaledSize: new google.maps.Size(118, 36),
+        anchor: new google.maps.Point(17, 18)
+      };
+    }
+
     function promptAddOhana(latLng) {
       document.getElementById('modal-ohana-id').value = "";
       document.getElementById('modal-ohana-name').value = "";
       document.getElementById('modal-ohana-person').value = "御花係";
       document.getElementById('modal-ohana-start').value = "13:30";
-      document.getElementById('modal-ohana-end').value = "14:00";
+      document.getElementById('modal-ohana-end').value = "13:45";
+      document.getElementById('modal-ohana-movedur').value = "5";
       document.getElementById('modal-ohana-memo').value = "";
+
+      const sectionRadios = document.querySelectorAll('input[name="modal-ohana-section"]');
+      sectionRadios.forEach(r => { r.checked = (r.value === 'front'); });
+
+      const afterRadios = document.querySelectorAll('input[name="modal-ohana-after"]');
+      afterRadios.forEach(r => { r.checked = (r.value === 'return_yatai'); });
+      toggleOhanaAfterUI();
+
       document.getElementById('modal-ohana-title').innerText = "🌸 新しい御花回収地点の追加";
       document.getElementById('modal-ohana-btn-delete').style.display = "none";
 
@@ -2018,6 +2369,9 @@
       const person = document.getElementById('modal-ohana-person').value.trim();
       const startTime = document.getElementById('modal-ohana-start').value;
       const endTime = document.getElementById('modal-ohana-end').value;
+      const moveDuration = parseInt(document.getElementById('modal-ohana-movedur').value, 10) || 5;
+      const assignedSection = (document.querySelector('input[name="modal-ohana-section"]:checked') || {}).value || 'front';
+      const afterAction = (document.querySelector('input[name="modal-ohana-after"]:checked') || {}).value || 'return_yatai';
       const memo = document.getElementById('modal-ohana-memo').value.trim();
 
       const modalEl = document.getElementById('ohana-modal');
@@ -2025,8 +2379,9 @@
       const lng = parseFloat(modalEl.dataset.lng);
 
       const existingIdx = (appState.ohanaPoints || []).findIndex(o => o.id === id);
-      const data = { id, name, person, startTime, endTime, memo, lat, lng };
+      const data = { id, name, person, startTime, endTime, moveDuration, assignedSection, afterAction, memo, lat, lng };
 
+      if (!appState.ohanaPoints) appState.ohanaPoints = [];
       if (existingIdx >= 0) {
         appState.ohanaPoints[existingIdx] = data;
       } else {
@@ -2046,7 +2401,18 @@
       document.getElementById('modal-ohana-person').value = op.person || "";
       document.getElementById('modal-ohana-start').value = op.startTime || "";
       document.getElementById('modal-ohana-end').value = op.endTime || "";
+      document.getElementById('modal-ohana-movedur').value = op.moveDuration || 5;
       document.getElementById('modal-ohana-memo').value = op.memo || "";
+
+      const section = op.assignedSection || 'front';
+      const sectionRadios = document.querySelectorAll('input[name="modal-ohana-section"]');
+      sectionRadios.forEach(r => { r.checked = (r.value === section); });
+
+      const after = op.afterAction || 'return_yatai';
+      const afterRadios = document.querySelectorAll('input[name="modal-ohana-after"]');
+      afterRadios.forEach(r => { r.checked = (r.value === after); });
+      toggleOhanaAfterUI();
+
       document.getElementById('modal-ohana-title').innerText = "🌸 御花回収地点の編集";
       document.getElementById('modal-ohana-btn-delete').style.display = "block";
 
@@ -2054,16 +2420,6 @@
       modalEl.dataset.lat = op.lat;
       modalEl.dataset.lng = op.lng;
       modalEl.style.display = 'flex';
-    }
-
-    function deleteOhanaFromModal() {
-      const id = document.getElementById('modal-ohana-id').value;
-      if (confirm("この御花回収地点を削除しますか？")) {
-        appState.ohanaPoints = (appState.ohanaPoints || []).filter(o => o.id !== id);
-        closeModal('ohana-modal');
-        renderOhana();
-        saveState();
-      }
     }
 
     function renderOhana() {
@@ -2097,24 +2453,41 @@
           const card = document.createElement('div');
           card.className = "checkpoint-card";
           card.id = `ohana-card-${op.id}`;
+
+          const isRear = op.assignedSection === 'rear';
+          const sectionBadge = isRear 
+            ? '<span style="font-size:10px; background:#fff5f5; color:#c53030; border:1px solid #feb2b2; padding:1px 5px; border-radius:3px; margin-left:4px;">後方係</span>'
+            : '<span style="font-size:10px; background:#ebf8ff; color:#2b6cb0; border:1px solid #bee3f8; padding:1px 5px; border-radius:3px; margin-left:4px;">前方係</span>';
+          const moveDur = op.moveDuration || 5;
+
           card.innerHTML = `
             <div class="cp-header">
-              <span class="cp-badge" style="background:#2B6CB0;">🌸</span>
-              <span class="cp-title">${op.name}</span>
-              <span class="live-status-pill status-waiting" id="ohana-pill-${op.id}">待機中</span>
-              <button class="btn btn-outline" style="padding:2px 6px; font-size:11px; margin-left:6px;" onclick="openOhanaModalById('${op.id}')">編集</button>
-              <button class="btn btn-outline" style="padding:2px 6px; font-size:11px; margin-left:4px; color:var(--danger); border-color:var(--border);" onclick="deleteOhanaDirect('${op.id}')">削除</button>
+              <div style="display:flex; align-items:center; gap:6px; flex:1; min-width:0;">
+                <span class="cp-badge" style="background:#2B6CB0;">🌸</span>
+                <span class="cp-title" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  ${op.name} ${sectionBadge}
+                </span>
+                <span class="live-status-pill status-waiting" id="ohana-pill-${op.id}">待機中</span>
+              </div>
+              <div style="display:flex; gap:4px; align-items:center; margin-left:auto;">
+                <button class="btn btn-outline" style="padding:2px 6px; font-size:11px;" onclick="openOhanaModalById('${op.id}')">編集</button>
+                <button class="btn btn-outline" style="padding:2px 6px; font-size:11px; color:var(--danger); border-color:var(--border);" onclick="deleteOhanaDirect('${op.id}')">削除</button>
+              </div>
             </div>
             <div class="cp-meta-grid">
-              <div>担当: <strong>${op.person || '未定'}</strong></div>
-              <div>回収時間: <strong>${op.startTime} 〜 ${op.endTime}</strong></div>
+              <div>担当: <strong>${isRear ? '後方御花係' : '前方御花係'}</strong> (${op.person || '担当者'})</div>
+              <div>回収時間: <strong>${op.startTime} 〜 ${op.endTime}</strong> (往復各${moveDur}分)</div>
             </div>
+            ${op.afterAction === 'continue_next' 
+              ? '<div style="font-size:11px; color:#D53F8C; background:#fff5f7; padding:3px 7px; border-radius:4px; margin-top:4px; border:1px solid #fed7e2;">🌸 連続回収 ➔ 屋台へは戻らず次の御花地点へ直接移動</div>' 
+              : '<div style="font-size:11px; color:#2B6CB0; background:#ebf8ff; padding:3px 7px; border-radius:4px; margin-top:4px; border:1px solid #bee3f8;">🏮 屋台へ帰還 ➔ 回収完了後に屋台へ戻る</div>'}
             ${op.memo ? `<div style="font-size:11px; color:var(--gray); margin-top:4px;">📝 ${op.memo}</div>` : ''}
           `;
           container.appendChild(card);
         }
       });
     }
+
 
     // 表示・非表示切り替え
     function toggleGuardLayer() {
@@ -2124,12 +2497,14 @@
       saveState();
     }
 
+
     function toggleOhanaLayer() {
       const show = document.getElementById('toggle-ohana').checked;
       appState.showOhanaLayer = show;
       ohanaMarkers.forEach(m => m.setMap(show ? map : null));
       saveState();
     }
+
 
     // --- 直接削除 ＆ 全消去ハンドラ ---
     function deleteCheckpointDirect(id) {
@@ -2141,6 +2516,7 @@
         saveState();
       }
     }
+
 
     function clearAllCheckpoints() {
       if (appState.checkpoints.length === 0) {
@@ -2154,6 +2530,7 @@
       }
     }
 
+
     function deleteWaypointDirect(id) {
       const wp = appState.waypoints.find(w => w.id === id);
       const name = wp ? `[${wp.type === 'rest' ? '休憩' : '通過'}] ${wp.name}` : "このポイント";
@@ -2165,6 +2542,7 @@
         updateTimelineSettings();
       }
     }
+
 
     function clearAllWaypoints() {
       if (appState.waypoints.length === 0) {
@@ -2180,6 +2558,7 @@
       }
     }
 
+
     function deleteOhanaDirect(id) {
       const op = (appState.ohanaPoints || []).find(o => o.id === id);
       const name = op ? `[御花] ${op.name}` : "この地点";
@@ -2189,6 +2568,7 @@
         saveState();
       }
     }
+
 
     function clearAllOhana() {
       const list = appState.ohanaPoints || [];
@@ -2212,8 +2592,10 @@
       document.querySelector('input[name="wp-type"][value="rest"]').checked = true;
       toggleWpTypeUI();
 
+
       document.getElementById('modal-wp-title').innerText = "ルート線上ポイントの追加";
       document.getElementById('modal-wp-btn-delete').style.display = "none";
+
 
       const modalEl = document.getElementById('waypoint-modal');
       modalEl.dataset.lat = latLng.lat();
@@ -2222,10 +2604,12 @@
       setMode('view');
     }
 
+
     function toggleWpTypeUI() {
       const type = document.querySelector('input[name="wp-type"]:checked').value;
       document.getElementById('wp-rest-input-group').style.display = type === 'rest' ? 'block' : 'none';
     }
+
 
     function saveWaypointModal(e) {
       e.preventDefault();
@@ -2235,12 +2619,15 @@
       const time = document.getElementById('modal-wp-time').value;
       const restMinutes = type === 'rest' ? (parseInt(document.getElementById('modal-wp-rest').value, 10) || 0) : 0;
 
+
       const modalEl = document.getElementById('waypoint-modal');
       const lat = parseFloat(modalEl.dataset.lat);
       const lng = parseFloat(modalEl.dataset.lng);
 
+
       const existingIndex = appState.waypoints.findIndex(w => w.id === id);
       const wpData = { id, type, name, lat, lng, time, restMinutes };
+
 
       if (existingIndex >= 0) {
         appState.waypoints[existingIndex] = wpData;
@@ -2248,10 +2635,12 @@
         appState.waypoints.push(wpData);
       }
 
+
       closeModal('waypoint-modal');
       renderWaypoints();
       saveState();
     }
+
 
     function openWaypointModalById(id) {
       const wp = appState.waypoints.find(w => w.id === id);
@@ -2263,14 +2652,17 @@
       document.querySelector(`input[name="wp-type"][value="${wp.type}"]`).checked = true;
       toggleWpTypeUI();
 
+
       document.getElementById('modal-wp-title').innerText = "ルート線上ポイントの編集";
       document.getElementById('modal-wp-btn-delete').style.display = "block";
+
 
       const modalEl = document.getElementById('waypoint-modal');
       modalEl.dataset.lat = wp.lat;
       modalEl.dataset.lng = wp.lng;
       modalEl.style.display = 'flex';
     }
+
 
     function deleteWaypointFromModal() {
       const id = document.getElementById('modal-wp-id').value;
@@ -2282,13 +2674,16 @@
       }
     }
 
+
     function renderWaypoints() {
       waypointMarkers.forEach(m => m.setMap(null));
       waypointMarkers = [];
 
+
       const container = document.getElementById('waypoint-list-container');
       container.innerHTML = "";
       document.getElementById('wp-count').innerText = appState.waypoints.length;
+
 
       appState.waypoints.forEach(wp => {
         const isRest = wp.type === 'rest';
@@ -2306,6 +2701,7 @@
           </svg>
         `;
 
+
         const marker = new google.maps.Marker({
           position: { lat: wp.lat, lng: wp.lng },
           map: map,
@@ -2318,11 +2714,14 @@
           zIndex: 800
         });
 
+
         marker.addListener('click', () => {
           openWaypointModalById(wp.id);
         });
 
+
         waypointMarkers.push(marker);
+
 
         const card = document.createElement('div');
         card.className = `waypoint-card ${isRest ? '' : 'is-pass'}`;
@@ -2341,14 +2740,18 @@
         container.appendChild(card);
       });
 
+
       updateCalculatedStats();
     }
+
 
     function renderTeamMovePaths() {
       teamPolylines.forEach(p => p.setMap(null));
       teamPolylines = [];
 
+
       if (!appState.showTeamPaths || !window.google || !map) return;
+
 
       const teams = {};
       appState.checkpoints.forEach(cp => {
@@ -2357,12 +2760,15 @@
         teams[cp.team].push(cp);
       });
 
+
       for (const [teamName, points] of Object.entries(teams)) {
         if (points.length < 2) continue;
+
 
         points.sort((a, b) => timeToMinutes(a.guardStart || "00:00") - timeToMinutes(b.guardStart || "00:00"));
         const pathCoords = points.map(p => ({ lat: p.lat, lng: p.lng }));
         const color = getTeamColor(teamName);
+
 
         const poly = new google.maps.Polyline({
           path: pathCoords,
@@ -2379,18 +2785,22 @@
           map: map
         });
 
+
         teamPolylines.push(poly);
       }
     }
+
 
     function toggleTeamMovePaths() {
       appState.showTeamPaths = document.getElementById('toggle-team-paths').checked;
       renderTeamMovePaths();
     }
 
+
     function renderTeamScheduleTab() {
       const container = document.getElementById('team-schedule-container');
       container.innerHTML = "";
+
 
       const teams = {};
       appState.checkpoints.forEach(cp => {
@@ -2399,10 +2809,12 @@
         teams[teamName].push(cp);
       });
 
+
       if (Object.keys(teams).length === 0) {
         container.innerHTML = `<p style="font-size:12px; color:var(--gray); text-align:center; padding:20px 0;">警備地点を登録すると、班ごとのスケジュールと移動表が生成されます。</p>`;
         return;
       }
+
 
       for (const [teamName, points] of Object.entries(teams)) {
         points.sort((a, b) => timeToMinutes(a.guardStart || "00:00") - timeToMinutes(b.guardStart || "00:00"));
@@ -2410,11 +2822,13 @@
         const card = document.createElement('div');
         card.className = "team-block";
 
+
         let stepsHtml = "";
         for (let i = 0; i < points.length; i++) {
           const cp = points[i];
           const isEscort = cp.type === 'escort';
           const posLabel = getPosLabel(isEscort ? cp.escortPosition : cp.joinPosition);
+
 
           stepsHtml += `
             <div class="team-step">
@@ -2428,12 +2842,14 @@
             </div>
           `;
 
+
           // 定点警備後の屋台合流ステップ
           if (!isEscort && cp.afterAction === 'join_yatai') {
             const endM = timeToMinutes(cp.guardEnd || "00:00");
             const duration = cp.joinDuration || 10;
             const joinArrM = endM + duration;
             const joinEndM = cp.joinEnd ? timeToMinutes(cp.joinEnd) : timeToMinutes(appState.endTime);
+
 
             stepsHtml += `
               <div class="team-move-alert" style="background:#ebf8ff; border:1px solid #90cdf4; color:#2b6cb0; margin:4px 0 8px 18px; border-radius:4px; padding:5px 8px;">
@@ -2445,10 +2861,12 @@
             `;
           }
 
+
           // 次の地点への移動インターバル判定（屋台随行・合流の終了時刻を考慮）
           if (i < points.length - 1) {
             const nextCp = points[i + 1];
             let effectiveLeaveMins = timeToMinutes(cp.guardEnd || "00:00");
+
 
             if (isEscort) {
               effectiveLeaveMins = timeToMinutes(cp.guardEnd || "00:00");
@@ -2456,8 +2874,10 @@
               effectiveLeaveMins = cp.joinEnd ? timeToMinutes(cp.joinEnd) : (timeToMinutes(cp.guardEnd || "00:00") + (cp.joinDuration || 10));
             }
 
+
             const nextStartM = timeToMinutes(nextCp.guardStart || "00:00");
             const interval = nextStartM - effectiveLeaveMins;
+
 
             let distM = 0;
             if (window.google && google.maps.geometry && !isEscort && nextCp.type !== 'escort') {
@@ -2466,6 +2886,7 @@
                 new google.maps.LatLng(nextCp.lat, nextCp.lng)
               ));
             }
+
 
             if (interval < 0) {
               stepsHtml += `
@@ -2490,6 +2911,7 @@
           }
         }
 
+
         card.innerHTML = `
           <div class="team-header">
             <div>
@@ -2504,6 +2926,7 @@
       }
     }
 
+
     function openCheckpointModal(cp, isNew) {
       document.getElementById('modal-cp-id').value = cp.id;
       document.getElementById('modal-cp-symbol').value = cp.symbol;
@@ -2514,12 +2937,15 @@
       document.getElementById('modal-cp-guard-start').value = cp.guardStart || "13:15";
       document.getElementById('modal-cp-guard-end').value = cp.guardEnd || "13:45";
 
+
       // 警備種別（定点 vs 屋台随行）の反映
       const isEscort = cp.type === 'escort';
       const typeRadios = document.querySelectorAll('input[name="modal-cp-type"]');
       typeRadios.forEach(r => { r.checked = (r.value === (isEscort ? 'escort' : 'fixed')); });
 
+
       document.getElementById('modal-cp-escort-pos').value = cp.escortPosition || "front";
+
 
       // 屋台合流設定の反映
       const isJoin = cp.afterAction === 'join_yatai';
@@ -2528,13 +2954,16 @@
       document.getElementById('modal-cp-join-pos').value = cp.joinPosition || "front";
       document.getElementById('modal-cp-join-end').value = cp.joinEnd || appState.endTime || "17:00";
 
+
       toggleCpTypeUI();
       toggleJoinYataiUI();
+
 
       document.getElementById('modal-title').innerText = isNew 
         ? (isEscort ? "新しい屋台随行警備の追加" : "新しい警備地点の追加") 
         : `警備地点 [${cp.symbol}] の編集`;
       document.getElementById('modal-btn-delete').style.display = isNew ? "none" : "block";
+
 
       const modalEl = document.getElementById('checkpoint-modal');
       modalEl.dataset.lat = cp.lat || 0;
@@ -2542,10 +2971,12 @@
       modalEl.style.display = 'flex';
     }
 
+
     function openCheckpointModalById(id) {
       const cp = appState.checkpoints.find(c => c.id === id);
       if (cp) openCheckpointModal(cp, false);
     }
+
 
     function addTagToModal(tag) {
       const input = document.getElementById('modal-cp-risk');
@@ -2556,6 +2987,7 @@
         input.value = val + ", " + tag;
       }
     }
+
 
     function saveCheckpointModal(e) {
       e.preventDefault();
@@ -2570,6 +3002,7 @@
       const guardStart = document.getElementById('modal-cp-guard-start').value;
       const guardEnd = document.getElementById('modal-cp-guard-end').value;
 
+
       // 定点警備の場合の屋台合流アクション
       const isJoin = type === 'fixed' && document.getElementById('modal-cp-join-yatai').checked;
       const afterAction = isJoin ? 'join_yatai' : 'none';
@@ -2577,9 +3010,11 @@
       const joinPosition = document.getElementById('modal-cp-join-pos').value;
       const joinEnd = document.getElementById('modal-cp-join-end').value || appState.endTime;
 
+
       const modalEl = document.getElementById('checkpoint-modal');
       const lat = parseFloat(modalEl.dataset.lat) || 0;
       const lng = parseFloat(modalEl.dataset.lng) || 0;
+
 
       const existingIndex = appState.checkpoints.findIndex(c => c.id === id);
       const cpData = {
@@ -2587,16 +3022,19 @@
         guardStart, guardEnd, afterAction, joinDuration, joinPosition, joinEnd
       };
 
+
       if (existingIndex >= 0) {
         appState.checkpoints[existingIndex] = cpData;
       } else {
         appState.checkpoints.push(cpData);
       }
 
+
       closeModal('checkpoint-modal');
       renderCheckpoints();
       saveState();
     }
+
 
     function deleteCheckpointFromModal() {
       const id = document.getElementById('modal-cp-id').value;
@@ -2608,9 +3046,11 @@
       }
     }
 
+
     function closeModal(id) {
       document.getElementById(id).style.display = 'none';
     }
+
 
     // --- 計算・統計 ---
     function updateCalculatedStats() {
@@ -2623,18 +3063,23 @@
         }
       }
 
+
       const distKm = totalDist / 1000;
       document.getElementById('route-distance').innerText = distKm.toFixed(2) + " km";
+
 
       const totalRestMins = appState.waypoints.filter(w => w.type === 'rest').reduce((sum, wp) => sum + (wp.restMinutes || 0), 0);
       document.getElementById('total-rest-time').innerText = totalRestMins + "分";
 
+
       const totalGuards = appState.checkpoints.reduce((sum, cp) => sum + (cp.guards || 0), 0);
       document.getElementById('total-guards').innerText = totalGuards + "名";
+
 
       document.getElementById('stat-guard-count').innerText = appState.checkpoints.length + "箇所";
       saveState();
     }
+
 
     function timeToMinutes(tStr) {
       if (!tStr) return 0;
@@ -2642,11 +3087,13 @@
       return h * 60 + m;
     }
 
+
     function minutesToTime(mins) {
       const h = Math.floor(mins / 60) % 24;
       const m = Math.floor(mins % 60);
       return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     }
+
 
     function updateTimelineSettings() {
       appState.startTime = document.getElementById('plan-start-time').value;
@@ -2656,6 +3103,7 @@
       updateSimulationDisplay();
       saveState();
     }
+
 
     function togglePlay() {
       appState.simPlaying = !appState.simPlaying;
@@ -2668,6 +3116,7 @@
         stopSimLoop();
       }
     }
+
 
     function startSimLoop() {
       stopSimLoop();
@@ -2683,9 +3132,11 @@
       }, 100);
     }
 
+
     function stopSimLoop() {
       if (simInterval) clearInterval(simInterval);
     }
+
 
     function resetSimulation() {
       if (appState.simPlaying) togglePlay();
@@ -2694,23 +3145,28 @@
       updateSimulationDisplay();
     }
 
+
     function updateSimSpeed() {
       appState.simSpeed = parseFloat(document.getElementById('sim-speed').value);
     }
+
 
     function onSliderChange(val) {
       appState.simProgress = val / 1000;
       updateSimulationDisplay();
     }
 
+
     // ========================================================
     // ★★★ 区間タイムテーブル＆速度自動計算・停止ロジック ★★★
     // ========================================================
+
 
     function getRouteCumulativeDistances() {
       const pts = appState.routePoints;
       const cumDist = [0];
       if (!window.google || !google.maps.geometry || pts.length < 2) return { cumDist: [0], totalDist: 0 };
+
 
       for (let i = 0; i < pts.length - 1; i++) {
         const p1 = new google.maps.LatLng(pts[i]);
@@ -2721,19 +3177,23 @@
       return { cumDist, totalDist: cumDist[cumDist.length - 1] };
     }
 
+
     function findDistanceAlongRoute(targetLatLng, cumDist) {
       const pts = appState.routePoints;
       if (pts.length < 2) return 0;
 
+
       let minDistanceToSegment = Infinity;
       let bestDistAlongRoute = 0;
       const target = new google.maps.LatLng(targetLatLng);
+
 
       for (let i = 0; i < pts.length - 1; i++) {
         const p1 = new google.maps.LatLng(pts[i]);
         const p2 = new google.maps.LatLng(pts[i + 1]);
         const segLen = cumDist[i + 1] - cumDist[i];
         if (segLen === 0) continue;
+
 
         for (let step = 0; step <= 10; step++) {
           const ratio = step / 10;
@@ -2749,12 +3209,14 @@
       return bestDistAlongRoute;
     }
 
+
     function getPointAtDistance(targetDist, cumDist) {
       const pts = appState.routePoints;
       if (pts.length === 0) return { lat: 34.8394, lng: 134.6939 };
       if (pts.length === 1 || targetDist <= 0) return pts[0];
       const totalDist = cumDist[cumDist.length - 1];
       if (targetDist >= totalDist) return pts[pts.length - 1];
+
 
       for (let i = 0; i < cumDist.length - 1; i++) {
         if (targetDist >= cumDist[i] && targetDist <= cumDist[i + 1]) {
@@ -2769,8 +3231,10 @@
       return pts[pts.length - 1];
     }
 
+
     function buildRouteTimeline(cumDist, totalDist) {
       const timeline = [];
+
 
       const startMins = timeToMinutes(appState.startTime);
       timeline.push({
@@ -2783,6 +3247,7 @@
         lat: appState.routePoints[0] ? appState.routePoints[0].lat : 0,
         lng: appState.routePoints[0] ? appState.routePoints[0].lng : 0
       });
+
 
       appState.waypoints.forEach(wp => {
         const d = findDistanceAlongRoute({ lat: wp.lat, lng: wp.lng }, cumDist);
@@ -2801,6 +3266,7 @@
         });
       });
 
+
       const endMins = timeToMinutes(appState.endTime);
       timeline.push({
         id: "end",
@@ -2813,9 +3279,11 @@
         lng: appState.routePoints[appState.routePoints.length - 1] ? appState.routePoints[appState.routePoints.length - 1].lng : 0
       });
 
+
       timeline.sort((a, b) => a.dist - b.dist);
       return timeline;
     }
+
 
     function updateSimulationDisplay() {
       const startMins = timeToMinutes(appState.startTime);
@@ -2824,17 +3292,22 @@
       const curMins = startMins + totalMins * appState.simProgress;
       const curTimeStr = minutesToTime(curMins);
 
+
       document.getElementById('sim-current-time').innerText = curTimeStr;
 
+
       const { cumDist, totalDist } = getRouteCumulativeDistances();
+
 
       let currentPosition = null;
       let currentDist = 0;
       let statusText = "巡行中";
       let statusLocation = "巡行中";
 
+
       if (appState.routePoints.length > 0 && yataiMarker) {
         const timeline = buildRouteTimeline(cumDist, totalDist);
+
 
         if (curMins <= timeline[0].departMins) {
           currentPosition = { lat: timeline[0].lat, lng: timeline[0].lng };
@@ -2851,6 +3324,7 @@
           for (let i = 0; i < timeline.length; i++) {
             const node = timeline[i];
 
+
             // 休憩中の完全停止
             if (node.isRest && curMins >= node.arriveMins && curMins <= node.departMins) {
               currentPosition = { lat: node.lat, lng: node.lng };
@@ -2861,6 +3335,7 @@
               break;
             }
 
+
             // 区間移動中の速度自動調整補間
             if (i < timeline.length - 1) {
               const nextNode = timeline[i + 1];
@@ -2868,12 +3343,14 @@
                 const segTime = nextNode.arriveMins - node.departMins;
                 const segDist = nextNode.dist - node.dist;
 
+
                 let ratio = 0;
                 if (segTime > 0) {
                   ratio = (curMins - node.departMins) / segTime;
                 }
                 currentDist = node.dist + segDist * ratio;
                 currentPosition = getPointAtDistance(currentDist, cumDist);
+
 
                 const speedKmh = segTime > 0 ? ((segDist / 1000) / (segTime / 60)) : 0;
                 statusText = `巡行中 (約 ${speedKmh.toFixed(1)} km/h)`;
@@ -2884,19 +3361,23 @@
           }
         }
 
+
         if (!currentPosition) {
           currentPosition = appState.routePoints[0];
           currentDist = 0;
         }
+
 
         yataiMarker.setPosition(currentPosition);
         document.getElementById('yatai-location-text').innerText = statusLocation;
         document.getElementById('slider-current-status').innerText = statusText;
       }
 
+
       // ========================================================
       // ★★★ 屋台随行警備（前後左右）＆ 屋台合流の動的制御 ★★★
       // ========================================================
+
 
       // 古い合流線・移動中マーカーをクリア
       joinPolylines.forEach(p => p.setMap(null));
@@ -2904,13 +3385,16 @@
       joinMovingMarkers.forEach(m => m.setMap(null));
       joinMovingMarkers = [];
 
+
       // 古い随行マーカーをクリア
       escortMarkers.forEach(m => m.setMap(null));
       escortMarkers = [];
 
+
       const activeGuardsList = [];
       const activeEscortsList = [];
       const joiningGuardsList = [];
+
 
       // 屋台現在位置と進行方向方位
       let yataiLatLng = null;
@@ -2920,7 +3404,9 @@
         yataiHeading = getYataiHeadingAtDist(currentDist, cumDist);
       }
 
+
       const isGuardVisible = appState.showGuardLayer !== false;
+
 
       appState.checkpoints.forEach((cp, idx) => {
         const isEscort = cp.type === 'escort';
@@ -2928,13 +3414,16 @@
         const eM = timeToMinutes(cp.guardEnd || "00:00");
         const teamColor = getTeamColor(cp.team);
 
+
         let cardState = 'waiting';
+
 
         if (isEscort) {
           // --- 常時屋台随行警備（前後左右） ---
           if (curMins >= sM && curMins <= eM) {
             cardState = 'active';
             activeEscortsList.push(`[${getPosLabel(cp.escortPosition)}] ${cp.team}(${cp.guards}名)`);
+
 
             if (yataiLatLng && isGuardVisible && map) {
               const escortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, cp.escortPosition || 'front');
@@ -2955,6 +3444,7 @@
           // --- 定点警備 ---
           let fixedMarkerState = 'waiting';
 
+
           if (curMins >= sM && curMins <= eM) {
             cardState = 'active';
             fixedMarkerState = 'active';
@@ -2963,11 +3453,13 @@
             cardState = 'past';
             fixedMarkerState = 'past';
 
+
             // ★ 定点警備終了後の屋台合流判定
             if (cp.afterAction === 'join_yatai') {
               const joinDuration = cp.joinDuration || 10;
               const joinEndMins = eM + joinDuration;
               const joinFinalMins = cp.joinEnd ? timeToMinutes(cp.joinEnd) : timeToMinutes(appState.endTime);
+
 
               if (curMins >= eM && curMins < joinEndMins) {
                 // 🚶 【屋台へ移動・合流中フェーズ】
@@ -2975,12 +3467,15 @@
                 const ratio = Math.max(0, Math.min(1, (curMins - eM) / joinDuration));
                 const fromLatLng = new google.maps.LatLng(cp.lat, cp.lng);
 
+
                 if (yataiLatLng && isGuardVisible && map && window.google && google.maps.geometry) {
                   const targetEscortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, cp.joinPosition || 'front');
                   const targetLatLng = new google.maps.LatLng(targetEscortCoords.lat, targetEscortCoords.lng);
 
+
                   // 現在の移動中座標（線形補間）
                   const currentMoveLatLng = google.maps.geometry.spherical.interpolate(fromLatLng, targetLatLng, ratio);
+
 
                   // 合流動線（破線・矢印付き）
                   const joinLine = new google.maps.Polyline({
@@ -3000,6 +3495,7 @@
                   });
                   joinPolylines.push(joinLine);
 
+
                   // 移動中マーカー
                   const moveMarker = new google.maps.Marker({
                     position: currentMoveLatLng,
@@ -3012,13 +3508,16 @@
                   joinMovingMarkers.push(moveMarker);
                 }
 
+
                 const remainMin = Math.ceil(joinEndMins - curMins);
                 joiningGuardsList.push(`${cp.team} ([${cp.symbol}]➔屋台[${getPosLabel(cp.joinPosition)}]へ合流中・あと${remainMin}分)`);
+
 
               } else if (curMins >= joinEndMins && curMins <= joinFinalMins) {
                 // 🏮 【屋台に合流完了・随行警備中フェーズ】
                 cardState = 'joined';
                 activeEscortsList.push(`[${getPosLabel(cp.joinPosition)}] ${cp.team}(${cp.guards}名・地点[${cp.symbol}]合流)`);
+
 
                 if (yataiLatLng && isGuardVisible && map) {
                   const escortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, cp.joinPosition || 'front');
@@ -3036,6 +3535,7 @@
             }
           }
 
+
           // 定点マーカーの表示更新
           const fixedMarker = checkpointMarkers[idx];
           if (fixedMarker) {
@@ -3043,6 +3543,7 @@
             fixedMarker.setZIndex(fixedMarkerState === 'active' ? 9000 : (fixedMarkerState === 'past' ? 50 : 100));
           }
         }
+
 
         // カードとピル表示の更新
         const cardEl = document.getElementById(`cp-card-${cp.id}`);
@@ -3053,6 +3554,7 @@
           pillEl.style.background = '';
           pillEl.style.color = '';
           pillEl.style.borderColor = '';
+
 
           if (cardState === 'active') {
             cardEl.classList.add('active-guarding');
@@ -3085,10 +3587,12 @@
         }
       });
 
+
       // ========================================================
       // ★★★ 屋台から次の定点警備への先回り移動判定 ★★★
       // ========================================================
       const deployingGuardsList = [];
+
 
       // 班ごとに任務を時系列で整理し、屋台随行/合流終了から次の定点警備への移動を検出
       const teamDutyMap = {};
@@ -3099,17 +3603,21 @@
         teamDutyMap[t].push(cp);
       });
 
+
       for (const [tName, duties] of Object.entries(teamDutyMap)) {
         if (duties.length < 2) continue;
         duties.sort((a, b) => timeToMinutes(a.guardStart || "00:00") - timeToMinutes(b.guardStart || "00:00"));
+
 
         for (let i = 0; i < duties.length - 1; i++) {
           const curDuty = duties[i];
           const nextDuty = duties[i + 1];
 
+
           // 直前の任務が屋台にいた（随行、または定点から屋台合流）か？
           const isCurEscort = curDuty.type === 'escort';
           const isCurJoined = curDuty.afterAction === 'join_yatai';
+
 
           if ((isCurEscort || isCurJoined) && nextDuty.type !== 'escort') {
             // 屋台離脱時刻
@@ -3121,15 +3629,18 @@
             }
             const nextStartMins = timeToMinutes(nextDuty.guardStart || "00:00");
 
+
             // 現在時刻が「屋台離脱 〜 次の定点警備開始」の間にある場合
             if (curMins >= leaveMins && curMins < nextStartMins) {
               const moveDuration = Math.max(1, nextStartMins - leaveMins);
               const ratio = Math.max(0, Math.min(1, (curMins - leaveMins) / moveDuration));
               const tColor = getTeamColor(tName);
 
+
               if (yataiLatLng && isGuardVisible && map && window.google && google.maps.geometry) {
                 const targetLatLng = new google.maps.LatLng(nextDuty.lat, nextDuty.lng);
                 const currentMoveLatLng = google.maps.geometry.spherical.interpolate(yataiLatLng, targetLatLng, ratio);
+
 
                 // 屋台から次の地点への先回り破線
                 const deployLine = new google.maps.Polyline({
@@ -3149,6 +3660,7 @@
                 });
                 joinPolylines.push(deployLine);
 
+
                 // 先回り移動マーカー
                 const deployMarker = new google.maps.Marker({
                   position: currentMoveLatLng,
@@ -3161,6 +3673,7 @@
                 joinMovingMarkers.push(deployMarker);
               }
 
+
               const remainMin = Math.ceil(nextStartMins - curMins);
               deployingGuardsList.push(`${tName} (屋台➔[${nextDuty.symbol}]${nextDuty.name}へ先回り中・あと${remainMin}分)`);
             }
@@ -3168,8 +3681,10 @@
         }
       }
 
+
       // ステータス表示の更新
       document.getElementById('active-guard-points').innerText = activeGuardsList.length > 0 ? activeGuardsList.join(", ") : "なし";
+
 
       // 随行・合流・先回りステータスのサマリー更新
       let escortSummaryText = "";
@@ -3187,6 +3702,7 @@
         escortSummaryEl.innerText = escortSummaryText;
       }
 
+
       // 吹き出し用全文テキスト
       let tooltipText = "【現在定点警備中】\n" + (activeGuardsList.length > 0 ? activeGuardsList.join("\n") : "待機中");
       if (activeEscortsList.length > 0) {
@@ -3201,55 +3717,359 @@
       const summaryEl = document.querySelector('.status-summary');
       if (summaryEl) summaryEl.setAttribute('data-tooltip', tooltipText);
 
-      // 御花回収地点のリアルタイム変化
-      (appState.ohanaPoints || []).forEach((op, idx) => {
-        const sM = timeToMinutes(op.startTime || "00:00");
-        const eM = timeToMinutes(op.endTime || "00:00");
 
-        let state = 'waiting';
-        if (curMins >= sM && curMins <= eM) {
-          state = 'active';
-        } else if (curMins > eM) {
-          state = 'past';
-        }
+      // ========================================================
+      // ★★★ 御花回収班の屋台随行 ＆ 連続回収動線の制御 (案A) ★★★
+      // ========================================================
 
-        const marker = ohanaMarkers[idx];
-        if (marker) {
-          marker.setIcon(createOhanaMarkerIcon(op, state));
-          marker.setZIndex(state === 'active' ? 9500 : 200);
-        }
+      // 古い御花往復線・移動マーカー・屋台御花マーカーをクリア
+      ohanaTripPolylines.forEach(p => p.setMap(null));
+      ohanaTripPolylines = [];
+      ohanaMovingMarkers.forEach(m => m.setMap(null));
+      ohanaMovingMarkers = [];
+      yataiOhanaMarkers.forEach(m => m.setMap(null));
+      yataiOhanaMarkers = [];
 
-        const cardEl = document.getElementById(`ohana-card-${op.id}`);
-        const pillEl = document.getElementById(`ohana-pill-${op.id}`);
-        if (cardEl && pillEl) {
-          cardEl.classList.remove('active-guarding', 'past-guarding');
-          pillEl.classList.remove('status-active', 'status-waiting', 'status-ended');
+      const ohanaConfig = appState.ohanaConfig || { frontCount: 2, rearCount: 2 };
+      const isOhanaVisible = appState.showOhanaLayer !== false;
 
-          if (state === 'active') {
-            cardEl.classList.add('active-guarding');
-            pillEl.classList.add('status-active');
-            pillEl.style.background = "#bee3f8";
-            pillEl.style.color = "#2b6cb0";
-            pillEl.style.borderColor = "#90cdf4";
-            pillEl.innerText = "🌸 回収中";
-          } else if (state === 'past') {
-            cardEl.classList.add('past-guarding');
-            pillEl.classList.add('status-ended');
-            pillEl.innerText = "✓ 完了";
+      let isFrontDispatched = false;
+      let isRearDispatched = false;
+      const activeOhanaList = [];
+      const dispatchedOhanaList = [];
+
+      // 担当係（front / rear）ごとに御花地点を回収開始時刻の昇順でソート・整理
+      const ohanaGroups = {
+        front: (appState.ohanaPoints || []).filter(o => o.assignedSection !== 'rear').sort((a,b) => timeToMinutes(a.startTime||"00:00") - timeToMinutes(b.startTime||"00:00")),
+        rear: (appState.ohanaPoints || []).filter(o => o.assignedSection === 'rear').sort((a,b) => timeToMinutes(a.startTime||"00:00") - timeToMinutes(b.startTime||"00:00"))
+      };
+
+      // 各グループごとにチェーンを走査して動的アニメーション・状態判定
+      ['front', 'rear'].forEach(sectionKey => {
+        const chain = ohanaGroups[sectionKey];
+        const isRear = sectionKey === 'rear';
+        const sectionLabel = isRear ? '後方御花係' : '前方御花係';
+
+        for (let i = 0; i < chain.length; i++) {
+          const op = chain[i];
+          const prevOp = i > 0 ? chain[i - 1] : null;
+          const nextOp = i < chain.length - 1 ? chain[i + 1] : null;
+
+          // 直前の地点から連続して来たか（直前地点が continue_next）
+          const isContinueFromPrev = prevOp && prevOp.afterAction === 'continue_next';
+          // 次の地点へ連続して向かうか
+          const isContinueToNext = op.afterAction === 'continue_next' && nextOp;
+
+          const sM = timeToMinutes(op.startTime || "00:00");
+          const eM = timeToMinutes(op.endTime || "00:00");
+          const dur = op.moveDuration || 5;
+
+          // 出発時刻と出発座標
+          let departMins = sM - dur;
+          let fromLatLng = null;
+
+          if (isContinueFromPrev) {
+            departMins = timeToMinutes(prevOp.endTime || "00:00");
+            fromLatLng = new google.maps.LatLng(prevOp.lat, prevOp.lng);
           } else {
-            pillEl.classList.add('status-waiting');
-            pillEl.innerText = "待機中";
+            departMins = sM - dur;
+            if (yataiLatLng) {
+              const yataiEscortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, isRear ? 'rear' : 'front');
+              fromLatLng = new google.maps.LatLng(yataiEscortCoords.lat, yataiEscortCoords.lng);
+            }
+          }
+
+          const opLatLng = new google.maps.LatLng(op.lat, op.lng);
+
+          let markerState = 'waiting';
+          let cardState = 'waiting';
+          let statusNote = '';
+
+          if (curMins >= departMins && curMins < sM) {
+            // --- フェーズ1: 移動・急行中 ---
+            if (isRear) isRearDispatched = true; else isFrontDispatched = true;
+            cardState = isContinueFromPrev ? 'inter_move' : 'outbound';
+
+            const moveTotal = Math.max(1, sM - departMins);
+            const ratio = Math.max(0, Math.min(1, (curMins - departMins) / moveTotal));
+
+            if (fromLatLng && isOhanaVisible && map && window.google && google.maps.geometry) {
+              if (!isContinueFromPrev && yataiLatLng) {
+                const yataiEscortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, isRear ? 'rear' : 'front');
+                fromLatLng = new google.maps.LatLng(yataiEscortCoords.lat, yataiEscortCoords.lng);
+              }
+
+              const curMoveLatLng = google.maps.geometry.spherical.interpolate(fromLatLng, opLatLng, ratio);
+
+              // 誘導破線（矢印付き）
+              const tripLine = new google.maps.Polyline({
+                path: [fromLatLng, curMoveLatLng, opLatLng],
+                strokeColor: isContinueFromPrev ? '#9B2C2C' : '#D53F8C',
+                strokeOpacity: 0,
+                icons: [{
+                  icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 2.2 },
+                  offset: '0',
+                  repeat: '10px'
+                }, {
+                  icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2, fillColor: isContinueFromPrev ? '#9B2C2C' : '#D53F8C', fillOpacity: 1 },
+                  offset: '75%'
+                }],
+                map: map,
+                zIndex: 8700
+              });
+              ohanaTripPolylines.push(tripLine);
+
+              // 移動マーカー
+              const moveType = isContinueFromPrev ? 'inter_point' : 'outbound';
+              const moveMarker = new google.maps.Marker({
+                position: curMoveLatLng,
+                map: map,
+                icon: createOhanaMovingMarkerIcon(moveType, op.name, sectionLabel),
+                title: isContinueFromPrev ? `[地点間移動] ${sectionLabel}（${prevOp.name} ➔ ${op.name}）` : `[回収へ急行中] ${sectionLabel} ➔ ${op.name}`,
+                zIndex: 9800
+              });
+              moveMarker.addListener('click', () => openOhanaModalById(op.id));
+              ohanaMovingMarkers.push(moveMarker);
+            }
+
+            const rem = Math.ceil(sM - curMins);
+            statusNote = `あと${rem}分で到着`;
+            const fromText = isContinueFromPrev ? `${prevOp.name}` : `屋台`;
+            dispatchedOhanaList.push(`${sectionLabel} (${fromText}➔${op.name}へ移動中・あと${rem}分)`);
+
+          } else if (curMins >= sM && curMins <= eM) {
+            // --- フェーズ2: 回収中 ---
+            markerState = 'active';
+            cardState = 'active';
+            if (isRear) isRearDispatched = true; else isFrontDispatched = true;
+            activeOhanaList.push(`${op.name} (${sectionLabel})`);
+
+          } else if (curMins > eM) {
+            // --- フェーズ3: 回収終了後（連続移動 または 屋台帰還） ---
+            if (isContinueToNext) {
+              const nextStartM = timeToMinutes(nextOp.startTime || "00:00");
+              if (curMins < nextStartM) {
+                markerState = 'past';
+                cardState = 'inter_move';
+                if (isRear) isRearDispatched = true; else isFrontDispatched = true;
+
+                const interTotal = Math.max(1, nextStartM - eM);
+                const ratio = Math.max(0, Math.min(1, (curMins - eM) / interTotal));
+                const nextOpLatLng = new google.maps.LatLng(nextOp.lat, nextOp.lng);
+
+                if (isOhanaVisible && map && window.google && google.maps.geometry) {
+                  const curInterLatLng = google.maps.geometry.spherical.interpolate(opLatLng, nextOpLatLng, ratio);
+
+                  const interLine = new google.maps.Polyline({
+                    path: [opLatLng, curInterLatLng, nextOpLatLng],
+                    strokeColor: '#9B2C2C',
+                    strokeOpacity: 0,
+                    icons: [{
+                      icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 2.2 },
+                      offset: '0',
+                      repeat: '10px'
+                    }, {
+                      icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2, fillColor: '#9B2C2C', fillOpacity: 1 },
+                      offset: '75%'
+                    }],
+                    map: map,
+                    zIndex: 8700
+                  });
+                  ohanaTripPolylines.push(interLine);
+
+                  const interMarker = new google.maps.Marker({
+                    position: curInterLatLng,
+                    map: map,
+                    icon: createOhanaMovingMarkerIcon('inter_point', nextOp.name, sectionLabel),
+                    title: `[連続回収移動] ${sectionLabel}（${op.name} ➔ ${nextOp.name}へ移動中）`,
+                    zIndex: 9800
+                  });
+                  interMarker.addListener('click', () => openOhanaModalById(nextOp.id));
+                  ohanaMovingMarkers.push(interMarker);
+                }
+
+                const rem = Math.ceil(nextStartM - curMins);
+                statusNote = `あと${rem}分で${nextOp.name}到着`;
+                dispatchedOhanaList.push(`${sectionLabel} (${op.name}➔${nextOp.name}へ連続移動中・あと${rem}分)`);
+              } else {
+                markerState = 'past';
+                cardState = 'past';
+              }
+            } else {
+              // 屋台へ帰還
+              const arriveMins = eM + dur;
+              if (curMins <= arriveMins) {
+                markerState = 'past';
+                cardState = 'inbound';
+                if (isRear) isRearDispatched = true; else isFrontDispatched = true;
+
+                const ratio = Math.max(0, Math.min(1, (curMins - eM) / dur));
+
+                if (yataiLatLng && isOhanaVisible && map && window.google && google.maps.geometry) {
+                  const targetEscortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, isRear ? 'rear' : 'front');
+                  const targetEscortLatLng = new google.maps.LatLng(targetEscortCoords.lat, targetEscortCoords.lng);
+                  const curReturnLatLng = google.maps.geometry.spherical.interpolate(opLatLng, targetEscortLatLng, ratio);
+
+                  const returnLine = new google.maps.Polyline({
+                    path: [opLatLng, curReturnLatLng, targetEscortLatLng],
+                    strokeColor: '#2B6CB0',
+                    strokeOpacity: 0,
+                    icons: [{
+                      icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 2.2 },
+                      offset: '0',
+                      repeat: '10px'
+                    }, {
+                      icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2, fillColor: '#2B6CB0', fillOpacity: 1 },
+                      offset: '75%'
+                    }],
+                    map: map,
+                    zIndex: 8700
+                  });
+                  ohanaTripPolylines.push(returnLine);
+
+                  const returnMarker = new google.maps.Marker({
+                    position: curReturnLatLng,
+                    map: map,
+                    icon: createOhanaMovingMarkerIcon('inbound', op.name, sectionLabel),
+                    title: `[屋台へ帰還中] ${sectionLabel}（${op.name} ➔ 屋台へ復帰中）`,
+                    zIndex: 9800
+                  });
+                  returnMarker.addListener('click', () => openOhanaModalById(op.id));
+                  ohanaMovingMarkers.push(returnMarker);
+                }
+
+                const rem = Math.ceil(arriveMins - curMins);
+                statusNote = `あと${rem}分で屋台合流`;
+                dispatchedOhanaList.push(`${sectionLabel} (${op.name}➔屋台へ帰還中・あと${rem}分)`);
+              } else {
+                markerState = 'past';
+                cardState = 'past';
+              }
+            }
+          }
+
+          // 地点マーカーのアイコン更新
+          const marker = ohanaMarkers[idx];
+          if (marker) {
+            marker.setIcon(createOhanaMarkerIcon(op, markerState));
+            marker.setZIndex(markerState === 'active' ? 9500 : 200);
+          }
+
+          // カードの表示更新
+          const cardEl = document.getElementById(`ohana-card-${op.id}`);
+          const pillEl = document.getElementById(`ohana-pill-${op.id}`);
+          if (cardEl && pillEl) {
+            cardEl.classList.remove('active-guarding', 'past-guarding');
+            pillEl.classList.remove('status-active', 'status-waiting', 'status-ended');
+            pillEl.style.background = '';
+            pillEl.style.color = '';
+            pillEl.style.borderColor = '';
+
+            if (cardState === 'outbound') {
+              cardEl.classList.add('active-guarding');
+              cardEl.style.borderColor = '#d53f8c';
+              pillEl.classList.add('status-active');
+              pillEl.style.background = '#fed7e2';
+              pillEl.style.color = '#97266d';
+              pillEl.style.borderColor = '#fbb6ce';
+              pillEl.innerText = `🚶 急行中 (${statusNote})`;
+            } else if (cardState === 'inter_move') {
+              cardEl.classList.add('active-guarding');
+              cardEl.style.borderColor = '#9b2c2c';
+              pillEl.classList.add('status-active');
+              pillEl.style.background = '#feebc8';
+              pillEl.style.color = '#7b341e';
+              pillEl.style.borderColor = '#fbd38d';
+              pillEl.innerText = `🚶 連続移動中 (${statusNote})`;
+            } else if (cardState === 'active') {
+              cardEl.classList.add('active-guarding');
+              cardEl.style.borderColor = '#2b6cb0';
+              pillEl.classList.add('status-active');
+              pillEl.style.background = '#bee3f8';
+              pillEl.style.color = '#2b6cb0';
+              pillEl.style.borderColor = '#90cdf4';
+              pillEl.innerText = '🌸 回収中';
+            } else if (cardState === 'inbound') {
+              cardEl.classList.add('active-guarding');
+              cardEl.style.borderColor = '#3182ce';
+              pillEl.classList.add('status-active');
+              pillEl.style.background = '#ebf8ff';
+              pillEl.style.color = '#2c5282';
+              pillEl.style.borderColor = '#bee3f8';
+              pillEl.innerText = `🏃 帰還中 (${statusNote})`;
+            } else if (cardState === 'past') {
+              cardEl.classList.add('past-guarding');
+              pillEl.classList.add('status-ended');
+              pillEl.innerText = '✓ 完了';
+            } else {
+              pillEl.classList.add('status-waiting');
+              pillEl.innerText = '待機中';
+            }
           }
         }
       });
+
+      // --- 屋台の前後に常時随行する御花係バッジの描画 ---
+      if (yataiLatLng && isOhanaVisible && map && window.google && google.maps.geometry) {
+        // 前方御花係
+        if (ohanaConfig.frontCount > 0) {
+          const offset = google.maps.geometry.spherical.computeOffset(yataiLatLng, 22, yataiHeading);
+          const fMarker = new google.maps.Marker({
+            position: { lat: offset.lat(), lng: offset.lng() },
+            map: map,
+            icon: createYataiOhanaIcon('front', ohanaConfig.frontCount, isFrontDispatched),
+            title: `[前方御花係] ${ohanaConfig.frontCount}名 (${isFrontDispatched ? '一部離脱回収中' : '屋台随行中'})`,
+            zIndex: 9650
+          });
+          fMarker.addListener('click', () => switchTab('tab-ohana'));
+          yataiOhanaMarkers.push(fMarker);
+        }
+
+        // 後方御花係
+        if (ohanaConfig.rearCount > 0) {
+          const rearAngle = (yataiHeading + 180) % 360;
+          const offset = google.maps.geometry.spherical.computeOffset(yataiLatLng, 22, rearAngle);
+          const rMarker = new google.maps.Marker({
+            position: { lat: offset.lat(), lng: offset.lng() },
+            map: map,
+            icon: createYataiOhanaIcon('rear', ohanaConfig.rearCount, isRearDispatched),
+            title: `[後方御花係] ${ohanaConfig.rearCount}名 (${isRearDispatched ? '一部離脱回収中' : '屋台随行中'})`,
+            zIndex: 9650
+          });
+          rMarker.addListener('click', () => switchTab('tab-ohana'));
+          yataiOhanaMarkers.push(rMarker);
+        }
+      }
+
+      // タイムラインのステータスサマリーに御花情報を追加
+      if (activeOhanaList.length > 0) {
+        escortSummaryText += ` | 🌸回収:${activeOhanaList.length}件`;
+      }
+      if (dispatchedOhanaList.length > 0) {
+        escortSummaryText += ` | 🌸移動:${dispatchedOhanaList.length}件`;
+      }
+      if (escortSummaryEl) {
+        escortSummaryEl.innerText = escortSummaryText;
+      }
+
+      // 吹き出し用全文テキストに御花を追加
+      if (activeOhanaList.length > 0) {
+        tooltipText += "\n\n【現在御花回収中】\n・" + activeOhanaList.join("\n・");
+      }
+      if (dispatchedOhanaList.length > 0) {
+        tooltipText += "\n\n【御花係の移動動線】\n・" + dispatchedOhanaList.join("\n・");
+      }
+      if (summaryEl) summaryEl.setAttribute('data-tooltip', tooltipText);
     }
     
     // --- 懸念点診断 & レポート作成 ---
     let lastGeneratedAuditReport = "";
 
+
     function runSafetyAudit() {
       const results = [];
       const checkpoints = appState.checkpoints;
+
 
       if (checkpoints.length === 0) {
         results.push({
@@ -3258,6 +4078,7 @@
           desc: "巡行ルート上に警備地点（交差点・危険箇所など）を登録してください。"
         });
       }
+
 
       // 1. 人員不足チェック
       checkpoints.forEach(cp => {
@@ -3278,6 +4099,7 @@
         }
       });
 
+
       // 2. 班の移動時間・重複チェック
       const teams = {};
       checkpoints.forEach(cp => {
@@ -3286,9 +4108,11 @@
         teams[cp.team].push(cp);
       });
 
+
       for (const [teamName, points] of Object.entries(teams)) {
         if (points.length > 1) {
           points.sort((a, b) => timeToMinutes(a.guardStart || "00:00") - timeToMinutes(b.guardStart || "00:00"));
+
 
           for (let i = 0; i < points.length - 1; i++) {
             const p1 = points[i];
@@ -3296,6 +4120,7 @@
             const end1 = timeToMinutes(p1.guardEnd || "00:00");
             const start2 = timeToMinutes(p2.guardStart || "00:00");
             const interval = start2 - end1;
+
 
             if (interval < 0) {
               results.push({
@@ -3313,6 +4138,7 @@
           }
         }
       }
+
 
       // 3. 区間巡行スピード診断
       if (appState.routePoints.length > 1) {
@@ -3342,6 +4168,7 @@
         }
       }
 
+
       // 4. 特殊リスク対策の確認コメント
       checkpoints.forEach(cp => {
         const risks = cp.risk || "";
@@ -3368,8 +4195,10 @@
         }
       });
 
+
       const container = document.getElementById('audit-results-container');
       container.innerHTML = "";
+
 
       let textReport = `【秋祭り屋台巡行 警備計画 懸念点診断レポート】
 `;
@@ -3383,7 +4212,9 @@
 `;
       textReport += `----------------------------------------
 
+
 `;
+
 
       if (results.length === 0) {
         container.innerHTML = `
@@ -3406,14 +4237,17 @@
           textReport += `${idx+1}. ${r.title}
    ${r.desc}
 
+
 `;
         });
       }
+
 
       lastGeneratedAuditReport = textReport;
       document.getElementById('audit-actions').style.display = 'block';
       switchTab('tab-report');
     }
+
 
     function copyAuditReport() {
       if (!lastGeneratedAuditReport) return;
@@ -3422,9 +4256,11 @@
       });
     }
 
+
     function saveState() {
       localStorage.setItem('yatai_sim_data', JSON.stringify(appState));
     }
+
 
     // --- データの読み込み＆復元（完全対応版） ---
     function loadSavedData() {
@@ -3446,6 +4282,7 @@
             if (!cp.guardEnd && cp.passTime) cp.guardEnd = cp.passTime;
           });
 
+
           // 画面入力欄への値の復元
           if (document.getElementById('plan-name')) document.getElementById('plan-name').value = appState.planName || "本宮 午後巡行警備計画";
           if (document.getElementById('plan-start-time')) document.getElementById('plan-start-time').value = appState.startTime || "13:00";
@@ -3453,6 +4290,7 @@
           const speedEl = document.getElementById('plan-speed');
           if (speedEl) speedEl.value = appState.speedKmh || 2.0;
           if (document.getElementById('plan-title-display')) document.getElementById('plan-title-display').innerText = appState.planName || "自治会警備計画";
+
 
           // レイヤー表示チェック状態の復元
           if (appState.showGuardLayer !== undefined && document.getElementById('toggle-guards')) {
@@ -3470,6 +4308,7 @@
       }
     }
 
+
     // --- 計画データのPC保存 (JSON) 完全安全版 ---
     function exportDataJSON() {
       try {
@@ -3478,10 +4317,12 @@
         const endEl = document.getElementById('plan-end-time');
         const speedEl = document.getElementById('plan-speed');
 
+
         if (planNameEl) appState.planName = planNameEl.value.trim() || "本宮 午後巡行警備計画";
         if (startEl) appState.startTime = startEl.value || "13:00";
         if (endEl) appState.endTime = endEl.value || "17:00";
         if (speedEl) appState.speedKmh = parseFloat(speedEl.value) || 2.0;
+
 
         const exportPayload = {
           planName: appState.planName,
@@ -3492,17 +4333,21 @@
           checkpoints: appState.checkpoints || [],
           waypoints: appState.waypoints || [],
           ohanaPoints: appState.ohanaPoints || [],
+          ohanaConfig: appState.ohanaConfig || { frontCount: 2, rearCount: 2 },
           showGuardLayer: appState.showGuardLayer !== false,
           showOhanaLayer: appState.showOhanaLayer !== false,
           showTeamPaths: appState.showTeamPaths !== false
         };
 
+
         const jsonStr = JSON.stringify(exportPayload, null, 2);
+
 
         const now = new Date();
         const timeStamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
         const safeName = (appState.planName || "屋台警備計画").replace(/[\/:*?"<>|\s]/g, '_');
         const fileName = `${safeName}_${timeStamp}.json`;
+
 
         const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
         const url = URL.createObjectURL(blob);
@@ -3512,16 +4357,19 @@
         document.body.appendChild(a);
         a.click();
 
+
         setTimeout(() => {
           if (a.parentNode) a.parentNode.removeChild(a);
           URL.revokeObjectURL(url);
         }, 1500);
+
 
       } catch (err) {
         console.error("保存エラー:", err);
         alert("保存中にエラーが発生しました: " + err.message);
       }
     }
+
 
     function triggerImportJSON() {
       document.getElementById('import-file').click();
@@ -3531,6 +4379,7 @@
     function importDataJSON(event) {
       const file = event.target.files[0];
       if (!file) return;
+
 
       const reader = new FileReader();
       reader.onload = function(e) {
@@ -3542,6 +4391,8 @@
           if (!appState.checkpoints) appState.checkpoints = [];
           if (!appState.waypoints) appState.waypoints = [];
           if (!appState.ohanaPoints) appState.ohanaPoints = [];
+          if (imported.ohanaConfig) appState.ohanaConfig = imported.ohanaConfig;
+
 
           saveState();
           alert("計画データを正常に読み込みました。");
@@ -3552,19 +4403,23 @@
       };
       reader.readAsText(file);
 
+
       event.target.value = '';
     }
+
 
     function openApiKeyModal() {
       document.getElementById('input-api-key').value = getApiKey();
       document.getElementById('apikey-modal').style.display = 'flex';
     }
 
+
     function saveApiKeyAndReload() {
       const key = document.getElementById('input-api-key').value.trim();
       localStorage.setItem('yatai_maps_api_key', key);
       location.reload();
     }
+
 
     function switchTab(tabId, e) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -3579,14 +4434,15 @@
       document.getElementById(tabId).classList.add('active');
     }
 
+
     function updatePlanMeta() {
       appState.planName = document.getElementById('plan-name').value;
       document.getElementById('plan-title-display').innerText = appState.planName;
       saveState();
     }
 
+
     window.onload = checkAuthOnLoad;
   </script>
 </body>
 </html>
-
