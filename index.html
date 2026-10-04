@@ -2267,7 +2267,10 @@
     // ==========================================
     // ★★★ 御花回収班の屋台随行 ＆ 連続回収管理 ★★★
     // ==========================================
-    let yataiOhanaMarkers = [];    // 屋台随行御花マーカー（前・後）
+    let yataiOhanaFrontMarker = null; // 屋台随行御花マーカー（前方）
+    let yataiOhanaRearMarker = null;  // 屋台随行御花マーカー（後方）
+    let yataiOhanaFrontState = { count: -1, isDispatched: null };
+    let yataiOhanaRearState = { count: -1, isDispatched: null };
     let ohanaTripPolylines = [];   // 御花往復動線破線群
     let ohanaMovingMarkers = [];   // 御花急行・帰還・地点間移動マーカー群
 
@@ -2520,6 +2523,12 @@
       const show = document.getElementById('toggle-ohana').checked;
       appState.showOhanaLayer = show;
       ohanaMarkers.forEach(m => m.setMap(show ? map : null));
+      if (!show) {
+        if (yataiOhanaFrontMarker) yataiOhanaFrontMarker.setMap(null);
+        if (yataiOhanaRearMarker) yataiOhanaRearMarker.setMap(null);
+      } else {
+        updateSimulationDisplay();
+      }
       saveState();
     }
 
@@ -3745,8 +3754,7 @@
       ohanaTripPolylines = [];
       ohanaMovingMarkers.forEach(m => m.setMap(null));
       ohanaMovingMarkers = [];
-      yataiOhanaMarkers.forEach(m => m.setMap(null));
-      yataiOhanaMarkers = [];
+      
 
       const ohanaConfig = appState.ohanaConfig || { frontCount: 2, rearCount: 2 };
       const isOhanaVisible = appState.showOhanaLayer !== false;
@@ -3991,35 +3999,67 @@
         }
       });
 
-      // --- 屋台の前後に常時随行する御花係バッジの描画 ---
-      if (yataiLatLng && isOhanaVisible && map && window.google && google.maps.geometry) {
-        // 前方御花係
-        if (ohanaConfig.frontCount > 0) {
-          const offset = google.maps.geometry.spherical.computeOffset(yataiLatLng, 22, yataiHeading);
-          const fMarker = new google.maps.Marker({
-            position: { lat: offset.lat(), lng: offset.lng() },
+      // --- 屋台の前後に常時随行する御花係バッジの描画（チラつき防止：インスタンス再利用＆差分更新） ---
+      const shouldShowFront = yataiLatLng && isOhanaVisible && map && window.google && google.maps.geometry && (ohanaConfig.frontCount > 0);
+      if (shouldShowFront) {
+        const offset = google.maps.geometry.spherical.computeOffset(yataiLatLng, 22, yataiHeading);
+        const pos = { lat: offset.lat(), lng: offset.lng() };
+
+        if (!yataiOhanaFrontMarker) {
+          yataiOhanaFrontMarker = new google.maps.Marker({
+            position: pos,
             map: map,
             icon: createYataiOhanaIcon('front', ohanaConfig.frontCount, isFrontDispatched),
             title: `[前方御花係] ${ohanaConfig.frontCount}名 (${isFrontDispatched ? '一部離脱回収中' : '屋台随行中'})`,
             zIndex: 9650
           });
-          fMarker.addListener('click', () => switchTab('tab-ohana'));
-          yataiOhanaMarkers.push(fMarker);
-        }
+          yataiOhanaFrontMarker.addListener('click', () => switchTab('tab-ohana'));
+          yataiOhanaFrontState = { count: ohanaConfig.frontCount, isDispatched: isFrontDispatched };
+        } else {
+          if (yataiOhanaFrontMarker.getMap() !== map) yataiOhanaFrontMarker.setMap(map);
+          yataiOhanaFrontMarker.setPosition(pos);
 
-        // 後方御花係
-        if (ohanaConfig.rearCount > 0) {
-          const rearAngle = (yataiHeading + 180) % 360;
-          const offset = google.maps.geometry.spherical.computeOffset(yataiLatLng, 22, rearAngle);
-          const rMarker = new google.maps.Marker({
-            position: { lat: offset.lat(), lng: offset.lng() },
+          if (yataiOhanaFrontState.count !== ohanaConfig.frontCount || yataiOhanaFrontState.isDispatched !== isFrontDispatched) {
+            yataiOhanaFrontMarker.setIcon(createYataiOhanaIcon('front', ohanaConfig.frontCount, isFrontDispatched));
+            yataiOhanaFrontMarker.setTitle(`[前方御花係] ${ohanaConfig.frontCount}名 (${isFrontDispatched ? '一部離脱回収中' : '屋台随行中'})`);
+            yataiOhanaFrontState = { count: ohanaConfig.frontCount, isDispatched: isFrontDispatched };
+          }
+        }
+      } else {
+        if (yataiOhanaFrontMarker && yataiOhanaFrontMarker.getMap()) {
+          yataiOhanaFrontMarker.setMap(null);
+        }
+      }
+
+      const shouldShowRear = yataiLatLng && isOhanaVisible && map && window.google && google.maps.geometry && (ohanaConfig.rearCount > 0);
+      if (shouldShowRear) {
+        const rearAngle = (yataiHeading + 180) % 360;
+        const offset = google.maps.geometry.spherical.computeOffset(yataiLatLng, 22, rearAngle);
+        const pos = { lat: offset.lat(), lng: offset.lng() };
+
+        if (!yataiOhanaRearMarker) {
+          yataiOhanaRearMarker = new google.maps.Marker({
+            position: pos,
             map: map,
             icon: createYataiOhanaIcon('rear', ohanaConfig.rearCount, isRearDispatched),
             title: `[後方御花係] ${ohanaConfig.rearCount}名 (${isRearDispatched ? '一部離脱回収中' : '屋台随行中'})`,
             zIndex: 9650
           });
-          rMarker.addListener('click', () => switchTab('tab-ohana'));
-          yataiOhanaMarkers.push(rMarker);
+          yataiOhanaRearMarker.addListener('click', () => switchTab('tab-ohana'));
+          yataiOhanaRearState = { count: ohanaConfig.rearCount, isDispatched: isRearDispatched };
+        } else {
+          if (yataiOhanaRearMarker.getMap() !== map) yataiOhanaRearMarker.setMap(map);
+          yataiOhanaRearMarker.setPosition(pos);
+
+          if (yataiOhanaRearState.count !== ohanaConfig.rearCount || yataiOhanaRearState.isDispatched !== isRearDispatched) {
+            yataiOhanaRearMarker.setIcon(createYataiOhanaIcon('rear', ohanaConfig.rearCount, isRearDispatched));
+            yataiOhanaRearMarker.setTitle(`[後方御花係] ${ohanaConfig.rearCount}名 (${isRearDispatched ? '一部離脱回収中' : '屋台随行中'})`);
+            yataiOhanaRearState = { count: ohanaConfig.rearCount, isDispatched: isRearDispatched };
+          }
+        }
+      } else {
+        if (yataiOhanaRearMarker && yataiOhanaRearMarker.getMap()) {
+          yataiOhanaRearMarker.setMap(null);
         }
       }
 
