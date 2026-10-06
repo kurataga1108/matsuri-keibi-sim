@@ -3646,6 +3646,7 @@
           const isNextEscort = nextDuty && nextDuty.type === 'escort';
 
           // ★ パターン1: 定点警備 ➔ 随行警備（屋台）（警備ポイントから屋台への合流移動！）
+          // 次が随行警備、または定点警備で「屋台合流」が設定されている場合
           if (!isCurEscort && (isNextEscort || curDuty.afterAction === 'join_yatai')) {
             const curEndMins = timeToMinutes(curDuty.guardEnd || "00:00");
             const setDuration = curDuty.joinDuration ? parseInt(curDuty.joinDuration, 10) : 10;
@@ -3659,10 +3660,11 @@
             moveDuration = Math.max(1, moveDuration);
 
             const targetArrMins = curEndMins + moveDuration;
-            const targetPosType = isNextEscort ? (nextDuty.escortPosition || 'front') : (curDuty.joinPosition || 'front');
+            // ★ 合流移動先および合流直後の随行位置は、定点警備側で設定した「合流後の屋台警備位置」を必ず使用する！
+            const targetPosType = curDuty.joinPosition || (isNextEscort ? nextDuty.escortPosition : 'front') || 'front';
 
             if (curMins >= curEndMins && curMins < targetArrMins) {
-              // 移動中フェーズ（設定された時間ピッタリで完了！）
+              // 移動中フェーズ（定点で設定した合流位置へ向かって移動！）
               const ratio = Math.max(0, Math.min(1, (curMins - curEndMins) / moveDuration));
               const fromLatLng = new google.maps.LatLng(curDuty.lat, curDuty.lng);
 
@@ -3699,19 +3701,19 @@
                     position: currentMoveLatLng,
                     map: map,
                     icon: createJoiningMarkerIcon(tName, curDuty.name),
-                    title: `[屋台へ合流移動中] ${tName}（[${curDuty.symbol}] ${curDuty.name} ➔ 屋台へ移動中）`,
+                    title: `[屋台へ合流移動中] ${tName}（[${curDuty.symbol}] ${curDuty.name} ➔ 屋台[${getPosLabel(targetPosType)}]へ移動中）`,
                     zIndex: 9700
                   });
                   moveMarker.addListener('click', () => openCheckpointModalById(curDuty.id));
-                  moveMarker._stateKey = `${tName}_${curDuty.name}`;
+                  moveMarker._stateKey = `${tName}_${curDuty.name}_${targetPosType}`;
                   joinMovingMarkersMap.set(markerKey, moveMarker);
                 } else {
                   if (moveMarker.getMap() !== map) moveMarker.setMap(map);
                   moveMarker.setPosition(currentMoveLatLng);
-                  const stateKey = `${tName}_${curDuty.name}`;
+                  const stateKey = `${tName}_${curDuty.name}_${targetPosType}`;
                   if (moveMarker._stateKey !== stateKey) {
                     moveMarker.setIcon(createJoiningMarkerIcon(tName, curDuty.name));
-                    moveMarker.setTitle(`[屋台へ合流移動中] ${tName}（[${curDuty.symbol}] ${curDuty.name} ➔ 屋台へ移動中）`);
+                    moveMarker.setTitle(`[屋台へ合流移動中] ${tName}（[${curDuty.symbol}] ${curDuty.name} ➔ 屋台[${getPosLabel(targetPosType)}]へ移動中）`);
                     moveMarker._stateKey = stateKey;
                   }
                 }
@@ -3730,19 +3732,23 @@
                 pillEl.style.background = "#bee3f8";
                 pillEl.style.color = "#2b6cb0";
                 pillEl.style.borderColor = "#90cdf4";
-                pillEl.innerText = `🚶 屋台へ合流中 (あと${remainMin}分)`;
+                pillEl.innerText = `🚶 屋台[${getPosLabel(targetPosType)}]へ合流中 (あと${remainMin}分)`;
               }
-            } else if (curMins >= targetArrMins && !isNextEscort && curDuty.afterAction === 'join_yatai') {
-              // 単独合流完了後、屋台随行フェーズ
-              // 次の任務（定点）があればその先回り開始時刻まで、無ければ合流終了時刻まで
+            } else if (curMins >= targetArrMins) {
+              // ★ 合流完了後：設定した屋台位置（targetPosType）で随行警備を行う！
+              // 次の随行警備（nextDuty）がある場合は、その開始時刻までこの位置で随行！
+              // 次の随行警備の開始時刻に達したら、nextDuty側の設定位置にスムーズに切り替わる！
               let joinFinalMins = curDuty.joinEnd ? timeToMinutes(curDuty.joinEnd) : timeToMinutes(appState.endTime);
-              if (nextDuty && nextDuty.type !== 'escort') {
+              if (isNextEscort) {
+                joinFinalMins = timeToMinutes(nextDuty.guardStart || "00:00");
+              } else if (nextDuty && nextDuty.type !== 'escort') {
                 const nextStart = timeToMinutes(nextDuty.guardStart || "00:00");
                 const nextMoveDur = nextDuty.joinDuration ? parseInt(nextDuty.joinDuration, 10) : 10;
                 joinFinalMins = Math.min(joinFinalMins, nextStart - nextMoveDur);
               }
 
-              if (curMins <= joinFinalMins) {
+              // 次の随行警備が始まる前（または単独合流の終了前）まで、定点で設定した合流位置に表示
+              if (curMins <= joinFinalMins && (!isNextEscort || curMins < nextStartMins)) {
                 activeGuardsList.push(`[屋台${getPosLabel(targetPosType)}随行(合流)] ${tName}(${curDuty.guards}名)`);
                 activeEscortsList.push(`[${getPosLabel(targetPosType)}] ${tName}(${curDuty.guards}名・合流)`);
 
@@ -3784,7 +3790,7 @@
                   pillEl.style.background = "#fefcbf";
                   pillEl.style.color = "#744210";
                   pillEl.style.borderColor = "#faf089";
-                  pillEl.innerText = "🚨 随行合流中";
+                  pillEl.innerText = `🚨 随行[${getPosLabel(targetPosType)}]合流中`;
                 }
               }
             }
