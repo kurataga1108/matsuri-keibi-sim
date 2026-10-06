@@ -3481,6 +3481,56 @@
 
       const isGuardVisible = appState.showGuardLayer !== false;
 
+      // ========================================================
+      // ★★★ 班別任務チェーン解析（設定時間とアイコン位置の完全同期） ★★★
+      // ========================================================
+      // 班ごとに任務を時系列ソートし、定点 ⇄ 屋台随行の厳密な離脱・合流・随行有効期間を算出
+      const teamDutyMap = {};
+      appState.checkpoints.forEach(cp => {
+        const t = cp.team && cp.team.trim() !== "" ? cp.team.trim() : null;
+        if (!t) return;
+        if (!teamDutyMap[t]) teamDutyMap[t] = [];
+        teamDutyMap[t].push(cp);
+      });
+
+      // 各タスクの実効的な屋台随行表示期間（effectiveStartMins 〜 effectiveEndMins）を計算
+      const dutyEffectiveTimeMap = new Map();
+
+      for (const [tName, duties] of Object.entries(teamDutyMap)) {
+        duties.sort((a, b) => timeToMinutes(a.guardStart || "00:00") - timeToMinutes(b.guardStart || "00:00"));
+
+        for (let i = 0; i < duties.length; i++) {
+          const curDuty = duties[i];
+          const prevDuty = i > 0 ? duties[i - 1] : null;
+          const nextDuty = i < duties.length - 1 ? duties[i + 1] : null;
+
+          const isCurEscort = curDuty.type === 'escort';
+          const sM = timeToMinutes(curDuty.guardStart || "00:00");
+          const eM = timeToMinutes(curDuty.guardEnd || "00:00");
+
+          if (isCurEscort) {
+            let effStart = sM;
+            let effEnd = eM;
+
+            // 直前に定点警備がある場合: 定点からの合流移動が完了するまで屋台には出さない！
+            if (prevDuty && prevDuty.type !== 'escort') {
+              const prevEnd = timeToMinutes(prevDuty.guardEnd || "00:00");
+              const moveDur = prevDuty.joinDuration ? parseInt(prevDuty.joinDuration, 10) : 10;
+              effStart = Math.max(sM, prevEnd + moveDur);
+            }
+
+            // 直後に定点警備がある場合: 定点への先回り移動を開始した瞬間に屋台から消す！
+            if (nextDuty && nextDuty.type !== 'escort') {
+              const nextStart = timeToMinutes(nextDuty.guardStart || "00:00");
+              const moveDur = nextDuty.joinDuration ? parseInt(nextDuty.joinDuration, 10) : 10;
+              effEnd = Math.min(eM, nextStart - moveDur);
+            }
+
+            dutyEffectiveTimeMap.set(curDuty.id, { effStart, effEnd });
+          }
+        }
+      }
+
       // 各警備地点の基本状態判定
       appState.checkpoints.forEach((cp) => {
         const isEscort = cp.type === 'escort';
@@ -3490,8 +3540,13 @@
         let cardState = 'waiting';
 
         if (isEscort) {
-          // --- 常時屋台随行警備（前後左右） ---
-          if (curMins >= sM && curMins <= eM) {
+          // ★ 実効的な屋台随行期間を取得（前後の移動と二重にならないよう同期！）
+          const effTimes = dutyEffectiveTimeMap.get(cp.id) || { effStart: sM, effEnd: eM };
+          const effStart = effTimes.effStart;
+          const effEnd = effTimes.effEnd;
+
+          // 実効期間中に屋台随行アイコンを表示
+          if (curMins >= effStart && curMins <= effEnd) {
             cardState = 'active';
             const escortLabel = `[屋台${getPosLabel(cp.escortPosition)}随行] ${cp.team || '警備班'}(${cp.guards}名)`;
             activeGuardsList.push(escortLabel);
@@ -3525,7 +3580,7 @@
                 }
               }
             }
-          } else if (curMins > eM) {
+          } else if (curMins > effEnd) {
             cardState = 'past';
           }
         } else {
@@ -3576,18 +3631,8 @@
 
       // ========================================================
       // ★★★ 警備ポイント ⇄ 屋台（随行警備）の動的移動アニメーション ★★★
-      // （御花回収と同様に、警備ポイントと屋台の間をアイコンが移動する表現）
       // ========================================================
       const deployingGuardsList = [];
-
-      // 班ごとに任務を時系列で整理
-      const teamDutyMap = {};
-      appState.checkpoints.forEach(cp => {
-        const t = cp.team && cp.team.trim() !== "" ? cp.team.trim() : null;
-        if (!t) return;
-        if (!teamDutyMap[t]) teamDutyMap[t] = [];
-        teamDutyMap[t].push(cp);
-      });
 
       for (const [tName, duties] of Object.entries(teamDutyMap)) {
         duties.sort((a, b) => timeToMinutes(a.guardStart || "00:00") - timeToMinutes(b.guardStart || "00:00"));
@@ -3601,21 +3646,18 @@
           const isNextEscort = nextDuty && nextDuty.type === 'escort';
 
           // ★ パターン1: 定点警備 ➔ 随行警備（屋台）（警備ポイントから屋台への合流移動！）
-          // 次が随行警備、または定点警備で「屋台合流」が設定されている場合
           if (!isCurEscort && (isNextEscort || curDuty.afterAction === 'join_yatai')) {
             const curEndMins = timeToMinutes(curDuty.guardEnd || "00:00");
-            // 設定された移動時間（分）を取得（未設定時は10分）
             const setDuration = curDuty.joinDuration ? parseInt(curDuty.joinDuration, 10) : 10;
             const nextStartMins = isNextEscort ? timeToMinutes(nextDuty.guardStart || "00:00") : null;
 
-            // 移動時間（次が随行警備で間隔が短い場合はその間隔に合わせるが、基本は設定された移動時間）
+            // 移動時間（設定時間ピッタリ）
             let moveDuration = setDuration;
             if (isNextEscort && nextStartMins && nextStartMins > curEndMins) {
               moveDuration = Math.min(setDuration, nextStartMins - curEndMins);
             }
             moveDuration = Math.max(1, moveDuration);
 
-            // ★ 移動完了（屋台合流）時刻：定点警備終了時刻 + 設定された移動時間！
             const targetArrMins = curEndMins + moveDuration;
             const targetPosType = isNextEscort ? (nextDuty.escortPosition || 'front') : (curDuty.joinPosition || 'front');
 
@@ -3690,81 +3732,81 @@
                 pillEl.style.borderColor = "#90cdf4";
                 pillEl.innerText = `🚶 屋台へ合流中 (あと${remainMin}分)`;
               }
-            } else if (curMins >= targetArrMins) {
-              // ★ 合流完了後：設定した時間で移動が完了した後は屋台随行状態にする！
-              let escortEndMins = curDuty.joinEnd ? timeToMinutes(curDuty.joinEnd) : timeToMinutes(appState.endTime);
-              if (isNextEscort && nextDuty.guardEnd) {
-                escortEndMins = timeToMinutes(nextDuty.guardEnd);
+            } else if (curMins >= targetArrMins && !isNextEscort && curDuty.afterAction === 'join_yatai') {
+              // 単独合流完了後、屋台随行フェーズ
+              // 次の任務（定点）があればその先回り開始時刻まで、無ければ合流終了時刻まで
+              let joinFinalMins = curDuty.joinEnd ? timeToMinutes(curDuty.joinEnd) : timeToMinutes(appState.endTime);
+              if (nextDuty && nextDuty.type !== 'escort') {
+                const nextStart = timeToMinutes(nextDuty.guardStart || "00:00");
+                const nextMoveDur = nextDuty.joinDuration ? parseInt(nextDuty.joinDuration, 10) : 10;
+                joinFinalMins = Math.min(joinFinalMins, nextStart - nextMoveDur);
               }
 
-              if (curMins <= escortEndMins) {
-                const isNextDutyActive = isNextEscort && (curMins >= timeToMinutes(nextDuty.guardStart || "00:00") && curMins <= timeToMinutes(nextDuty.guardEnd || "00:00"));
+              if (curMins <= joinFinalMins) {
+                activeGuardsList.push(`[屋台${getPosLabel(targetPosType)}随行(合流)] ${tName}(${curDuty.guards}名)`);
+                activeEscortsList.push(`[${getPosLabel(targetPosType)}] ${tName}(${curDuty.guards}名・合流)`);
 
-                if (!isNextDutyActive) {
-                  activeGuardsList.push(`[屋台${getPosLabel(targetPosType)}随行(合流)] ${tName}(${curDuty.guards}名)`);
-                  activeEscortsList.push(`[${getPosLabel(targetPosType)}] ${tName}(${curDuty.guards}名・合流)`);
+                if (yataiLatLng && isGuardVisible && map) {
+                  const escortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, targetPosType);
+                  const markerKey = `joined_${curDuty.id}`;
+                  activeEscortKeys.add(markerKey);
 
-                  if (yataiLatLng && isGuardVisible && map) {
-                    const escortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, targetPosType);
-                    const markerKey = `joined_${curDuty.id}`;
-                    activeEscortKeys.add(markerKey);
-
-                    let marker = escortMarkersMap.get(markerKey);
-                    if (!marker) {
-                      marker = new google.maps.Marker({
-                        position: escortCoords,
-                        map: map,
-                        icon: createEscortMarkerIcon(tName, curDuty.guards, targetPosType),
-                        title: `[屋台${getPosLabel(targetPosType)}随行(合流済)] ${tName} (${curDuty.guards}名)`,
-                        zIndex: 9600
-                      });
-                      marker.addListener('click', () => openCheckpointModalById(curDuty.id));
-                      marker._stateKey = `${tName}_${curDuty.guards}_${targetPosType}`;
-                      escortMarkersMap.set(markerKey, marker);
-                    } else {
-                      if (marker.getMap() !== map) marker.setMap(map);
-                      marker.setPosition(escortCoords);
-                      const stateKey = `${tName}_${curDuty.guards}_${targetPosType}`;
-                      if (marker._stateKey !== stateKey) {
-                        marker.setIcon(createEscortMarkerIcon(tName, curDuty.guards, targetPosType));
-                        marker.setTitle(`[屋台${getPosLabel(targetPosType)}随行(合流済)] ${tName} (${curDuty.guards}名)`);
-                        marker._stateKey = stateKey;
-                      }
+                  let marker = escortMarkersMap.get(markerKey);
+                  if (!marker) {
+                    marker = new google.maps.Marker({
+                      position: escortCoords,
+                      map: map,
+                      icon: createEscortMarkerIcon(tName, curDuty.guards, targetPosType),
+                      title: `[屋台${getPosLabel(targetPosType)}随行(合流済)] ${tName} (${curDuty.guards}名)`,
+                      zIndex: 9600
+                    });
+                    marker.addListener('click', () => openCheckpointModalById(curDuty.id));
+                    marker._stateKey = `${tName}_${curDuty.guards}_${targetPosType}`;
+                    escortMarkersMap.set(markerKey, marker);
+                  } else {
+                    if (marker.getMap() !== map) marker.setMap(map);
+                    marker.setPosition(escortCoords);
+                    const stateKey = `${tName}_${curDuty.guards}_${targetPosType}`;
+                    if (marker._stateKey !== stateKey) {
+                      marker.setIcon(createEscortMarkerIcon(tName, curDuty.guards, targetPosType));
+                      marker.setTitle(`[屋台${getPosLabel(targetPosType)}随行(合流済)] ${tName} (${curDuty.guards}名)`);
+                      marker._stateKey = stateKey;
                     }
                   }
+                }
 
-                  const cardEl = document.getElementById(`cp-card-${curDuty.id}`);
-                  const pillEl = document.getElementById(`pill-${curDuty.id}`);
-                  if (cardEl && pillEl) {
-                    cardEl.classList.add('active-guarding');
-                    cardEl.style.borderColor = "#d69e2e";
-                    pillEl.classList.add('status-active');
-                    pillEl.style.background = "#fefcbf";
-                    pillEl.style.color = "#744210";
-                    pillEl.style.borderColor = "#faf089";
-                    pillEl.innerText = "🚨 随行合流中";
-                  }
+                const cardEl = document.getElementById(`cp-card-${curDuty.id}`);
+                const pillEl = document.getElementById(`pill-${curDuty.id}`);
+                if (cardEl && pillEl) {
+                  cardEl.classList.add('active-guarding');
+                  cardEl.style.borderColor = "#d69e2e";
+                  pillEl.classList.add('status-active');
+                  pillEl.style.background = "#fefcbf";
+                  pillEl.style.color = "#744210";
+                  pillEl.style.borderColor = "#faf089";
+                  pillEl.innerText = "🚨 随行合流中";
                 }
               }
             }
           }
 
-          // ★ パターン2: 随行警備（屋台） ➔ 警備ポイント（屋台から警備ポイントへの先回り移動！）
-          if (isCurEscort && nextDuty && !isNextEscort) {
+          // ★ パターン2: 屋台（随行警備 または 合流中） ➔ 警備ポイント（屋台から警備ポイントへの先回り移動！）
+          const isDutyLeavingYatai = isCurEscort || curDuty.afterAction === 'join_yatai';
+          if (isDutyLeavingYatai && nextDuty && nextDuty.type !== 'escort') {
             const nextStartMins = timeToMinutes(nextDuty.guardStart || "00:00");
             const curEndMins = timeToMinutes(curDuty.guardEnd || "00:00");
             const setDuration = nextDuty.joinDuration ? parseInt(nextDuty.joinDuration, 10) : 10;
             
-            // 出発時刻：定点警備開始時刻の setDuration 分前（または随行終了時刻）
+            // 出発時刻：定点警備開始時刻の setDuration 分前
             let departMins = nextStartMins - setDuration;
-            if (curEndMins && curEndMins > departMins && curEndMins < nextStartMins) {
+            if (isCurEscort && curEndMins && curEndMins > departMins && curEndMins < nextStartMins) {
               departMins = curEndMins;
             }
             const moveDuration = Math.max(1, nextStartMins - departMins);
 
             if (curMins >= departMins && curMins < nextStartMins) {
               const ratio = Math.max(0, Math.min(1, (curMins - departMins) / moveDuration));
-              const curPosType = curDuty.escortPosition || 'front';
+              const curPosType = isCurEscort ? (curDuty.escortPosition || 'front') : (curDuty.joinPosition || 'front');
 
               if (yataiLatLng && isGuardVisible && map && window.google && google.maps.geometry) {
                 const escortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, curPosType);
