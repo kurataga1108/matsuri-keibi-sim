@@ -1818,7 +1818,7 @@
     // --- 警備地点操作 ---
     // --- 屋台随行・合流管理用変数 ---
     let escortMarkersMap = new Map(); // 屋台直近随行マーカー群（チラつき防止：インスタンス再利用）
-    let joinMovingMarkers = [];    // 屋台合流移動マーカー群
+    let joinMovingMarkersMap = new Map();  // 屋台合流・先回り移動マーカー群（チラつき防止：インスタンス再利用）
     let joinPolylines = [];        // 屋台合流動線破線群
 
 
@@ -2267,7 +2267,7 @@
     let yataiOhanaFrontState = { count: -1, isDispatched: null };
     let yataiOhanaRearState = { count: -1, isDispatched: null };
     let ohanaTripPolylines = [];   // 御花往復動線破線群
-    let ohanaMovingMarkers = [];   // 御花急行・帰還・地点間移動マーカー群
+    let ohanaMovingMarkersMap = new Map(); // 御花急行・帰還・地点間移動マーカー群（チラつき防止：インスタンス再利用）
 
     if (!appState.ohanaConfig) {
       appState.ohanaConfig = { frontCount: 2, rearCount: 2 };
@@ -2512,6 +2512,7 @@
       checkpointMarkers.forEach(m => m.setMap(show ? map : null));
       if (!show) {
         escortMarkersMap.forEach(m => m.setMap(null));
+        joinMovingMarkersMap.forEach(m => m.setMap(null));
       } else {
         updateSimulationDisplay();
       }
@@ -2526,6 +2527,7 @@
       if (!show) {
         if (yataiOhanaFrontMarker) yataiOhanaFrontMarker.setMap(null);
         if (yataiOhanaRearMarker) yataiOhanaRearMarker.setMap(null);
+        ohanaMovingMarkersMap.forEach(m => m.setMap(null));
       } else {
         updateSimulationDisplay();
       }
@@ -2789,61 +2791,48 @@
         if (points.length < 2) continue;
 
         points.sort((a, b) => timeToMinutes(a.guardStart || "00:00") - timeToMinutes(b.guardStart || "00:00"));
-        const pathCoords = [];
+        
+        // ★ 随行警備（屋台）との間は常時の線を表示しない！
+        // 定点警備同士が連続するセグメントのみ線を引く
+        const segments = [];
+        let currentSegment = [];
 
         for (let i = 0; i < points.length; i++) {
           const cp = points[i];
           const isEscort = cp.type === 'escort';
-          const sM = timeToMinutes(cp.guardStart || "00:00");
-          const eM = timeToMinutes(cp.guardEnd || "00:00");
 
-          if (!isEscort) {
-            // 定点警備の座標（不正な0,0は除外）
-            if (cp.lat !== 0 || cp.lng !== 0) {
-              pathCoords.push({ lat: cp.lat, lng: cp.lng });
-            }
-
-            // 定点警備終了後に屋台合流が設定されている場合
-            if (cp.afterAction === 'join_yatai') {
-              const joinDur = cp.joinDuration || 10;
-              const yPosStart = getYataiPositionAtTime(eM + joinDur);
-              const joinEndM = cp.joinEnd ? timeToMinutes(cp.joinEnd) : (eM + joinDur);
-              const yPosEnd = getYataiPositionAtTime(joinEndM);
-              if (yPosStart) pathCoords.push(yPosStart);
-              if (yPosEnd && yPosStart && (yPosEnd.lat !== yPosStart.lat || yPosEnd.lng !== yPosStart.lng)) {
-                pathCoords.push(yPosEnd);
-              }
-            }
+          if (!isEscort && (cp.lat !== 0 || cp.lng !== 0)) {
+            currentSegment.push({ lat: cp.lat, lng: cp.lng });
           } else {
-            // ★ 随行警備の場合：開始時刻の屋台位置と終了時刻の屋台位置を屋台ルートと連動して繋ぐ！
-            const yPosStart = getYataiPositionAtTime(sM);
-            const yPosEnd = getYataiPositionAtTime(eM);
-
-            if (yPosStart) pathCoords.push(yPosStart);
-            if (yPosEnd && yPosStart && (yPosEnd.lat !== yPosStart.lat || yPosEnd.lng !== yPosStart.lng)) {
-              pathCoords.push(yPosEnd);
+            // 随行警備が挟まったらセグメントを区切る（屋台との間の線は非表示）
+            if (currentSegment.length >= 2) {
+              segments.push(currentSegment);
             }
+            currentSegment = [];
           }
         }
-
-        if (pathCoords.length < 2) continue;
+        if (currentSegment.length >= 2) {
+          segments.push(currentSegment);
+        }
 
         const color = getTeamColor(teamName);
-        const poly = new google.maps.Polyline({
-          path: pathCoords,
-          strokeColor: color,
-          strokeOpacity: 0,
-          icons: [{
-            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },
-            offset: '0',
-            repeat: '14px'
-          }, {
-            icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2.5, fillColor: color, fillOpacity: 1 },
-            offset: '50%'
-          }],
-          map: map
+        segments.forEach(segCoords => {
+          const poly = new google.maps.Polyline({
+            path: segCoords,
+            strokeColor: color,
+            strokeOpacity: 0,
+            icons: [{
+              icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },
+              offset: '0',
+              repeat: '14px'
+            }, {
+              icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2.5, fillColor: color, fillOpacity: 1 },
+              offset: '50%'
+            }],
+            map: map
+          });
+          teamPolylines.push(poly);
         });
-        teamPolylines.push(poly);
       }
     }
 
@@ -3472,23 +3461,15 @@
       // ========================================================
 
 
-      // 古い合流線・移動中マーカーをクリア
+      // 古い合流線・移動動線破線をクリア
       joinPolylines.forEach(p => p.setMap(null));
       joinPolylines = [];
-      joinMovingMarkers.forEach(m => m.setMap(null));
-      joinMovingMarkers = [];
-
-
-      // 古い合流線・移動中マーカーをクリア
-      joinPolylines.forEach(p => p.setMap(null));
-      joinPolylines = [];
-      joinMovingMarkers.forEach(m => m.setMap(null));
-      joinMovingMarkers = [];
 
       const activeGuardsList = [];
       const activeEscortsList = [];
       const joiningGuardsList = [];
-      const activeEscortKeys = new Set(); // 今回アクティブな随行マーカーのキー
+      const activeEscortKeys = new Set();      // 今回アクティブな随行警備マーカーキー
+      const activeJoinMovingKeys = new Set();   // 今回アクティブな移動中マーカーキー
 
       // 屋台現在位置と進行方向方位
       let yataiLatLng = null;
@@ -3500,11 +3481,11 @@
 
       const isGuardVisible = appState.showGuardLayer !== false;
 
+      // 各警備地点の基本状態判定
       appState.checkpoints.forEach((cp) => {
         const isEscort = cp.type === 'escort';
         const sM = timeToMinutes(cp.guardStart || "00:00");
         const eM = timeToMinutes(cp.guardEnd || "00:00");
-        const teamColor = getTeamColor(cp.team);
 
         let cardState = 'waiting';
 
@@ -3513,7 +3494,7 @@
           if (curMins >= sM && curMins <= eM) {
             cardState = 'active';
             const escortLabel = `[屋台${getPosLabel(cp.escortPosition)}随行] ${cp.team || '警備班'}(${cp.guards}名)`;
-            activeGuardsList.push(escortLabel); // ★ 下部の「現在警備中の地点」にもしっかり表示！
+            activeGuardsList.push(escortLabel);
             activeEscortsList.push(`[${getPosLabel(cp.escortPosition)}] ${cp.team}(${cp.guards}名)`);
 
             if (yataiLatLng && isGuardVisible && map) {
@@ -3558,98 +3539,9 @@
           } else if (curMins > eM) {
             cardState = 'past';
             fixedMarkerState = 'past';
-
-            // ★ 定点警備終了後の屋台合流判定
-            if (cp.afterAction === 'join_yatai') {
-              const joinDuration = cp.joinDuration || 10;
-              const joinEndMins = eM + joinDuration;
-              const joinFinalMins = cp.joinEnd ? timeToMinutes(cp.joinEnd) : timeToMinutes(appState.endTime);
-
-              if (curMins >= eM && curMins < joinEndMins) {
-                // 🚶 【屋台へ移動・合流中フェーズ】
-                cardState = 'joining';
-                const ratio = Math.max(0, Math.min(1, (curMins - eM) / joinDuration));
-                const fromLatLng = new google.maps.LatLng(cp.lat, cp.lng);
-
-                if (yataiLatLng && isGuardVisible && map && window.google && google.maps.geometry) {
-                  const targetEscortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, cp.joinPosition || 'front');
-                  const targetLatLng = new google.maps.LatLng(targetEscortCoords.lat, targetEscortCoords.lng);
-
-                  // 現在の移動中座標（線形補間）
-                  const currentMoveLatLng = google.maps.geometry.spherical.interpolate(fromLatLng, targetLatLng, ratio);
-
-                  // 合流動線（破線・矢印付き）
-                  const joinLine = new google.maps.Polyline({
-                    path: [fromLatLng, currentMoveLatLng, targetLatLng],
-                    strokeColor: teamColor,
-                    strokeOpacity: 0,
-                    icons: [{
-                      icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 2.5 },
-                      offset: '0',
-                      repeat: '10px'
-                    }, {
-                      icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2.2, fillColor: teamColor, fillOpacity: 1 },
-                      offset: '75%'
-                    }],
-                    map: map,
-                    zIndex: 8500
-                  });
-                  joinPolylines.push(joinLine);
-
-                  // 移動中マーカー
-                  const moveMarker = new google.maps.Marker({
-                    position: currentMoveLatLng,
-                    map: map,
-                    icon: createJoiningMarkerIcon(cp.team, cp.name),
-                    title: `[合流移動中] ${cp.team}（[${cp.symbol}] ${cp.name} ➔ 屋台へ移動中）`,
-                    zIndex: 9700
-                  });
-                  moveMarker.addListener('click', () => openCheckpointModalById(cp.id));
-                  joinMovingMarkers.push(moveMarker);
-                }
-
-                const remainMin = Math.ceil(joinEndMins - curMins);
-                joiningGuardsList.push(`${cp.team} ([${cp.symbol}]➔屋台[${getPosLabel(cp.joinPosition)}]へ合流中・あと${remainMin}分)`);
-              } else if (curMins >= joinEndMins && curMins <= joinFinalMins) {
-                // 🏮 【屋台に合流完了・随行警備中フェーズ】
-                cardState = 'joined';
-                const escortLabel = `[屋台${getPosLabel(cp.joinPosition)}随行(合流)] ${cp.team || '警備班'}(${cp.guards}名)`;
-                activeGuardsList.push(escortLabel);
-                activeEscortsList.push(`[${getPosLabel(cp.joinPosition)}] ${cp.team}(${cp.guards}名・地点[${cp.symbol}]合流)`);
-
-                if (yataiLatLng && isGuardVisible && map) {
-                  const escortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, cp.joinPosition || 'front');
-                  const markerKey = `joined_${cp.id}`;
-                  activeEscortKeys.add(markerKey);
-
-                  let marker = escortMarkersMap.get(markerKey);
-                  if (!marker) {
-                    marker = new google.maps.Marker({
-                      position: escortCoords,
-                      map: map,
-                      icon: createEscortMarkerIcon(cp.team, cp.guards, cp.joinPosition || 'front'),
-                      title: `[屋台${getPosLabel(cp.joinPosition)}随行(合流済)] ${cp.team} (${cp.guards}名)`,
-                      zIndex: 9600
-                    });
-                    marker.addListener('click', () => openCheckpointModalById(cp.id));
-                    marker._stateKey = `${cp.team}_${cp.guards}_${cp.joinPosition}`;
-                    escortMarkersMap.set(markerKey, marker);
-                  } else {
-                    if (marker.getMap() !== map) marker.setMap(map);
-                    marker.setPosition(escortCoords);
-                    const stateKey = `${cp.team}_${cp.guards}_${cp.joinPosition}`;
-                    if (marker._stateKey !== stateKey) {
-                      marker.setIcon(createEscortMarkerIcon(cp.team, cp.guards, cp.joinPosition || 'front'));
-                      marker.setTitle(`[屋台${getPosLabel(cp.joinPosition)}随行(合流済)] ${cp.team} (${cp.guards}名)`);
-                      marker._stateKey = stateKey;
-                    }
-                  }
-                }
-              }
-            }
           }
 
-          // ★ 定点マーカーの表示更新（インデックスではなくIDで確実に取得！）
+          // 定点マーカーの表示更新（IDで確実に取得）
           const fixedMarker = checkpointMarkers.find(m => m.checkpointId === cp.id);
           if (fixedMarker) {
             fixedMarker.setIcon(createGuardMarkerIcon(cp, fixedMarkerState));
@@ -3657,7 +3549,7 @@
           }
         }
 
-        // カードとピル表示の更新
+        // カードとピル表示の初期更新
         const cardEl = document.getElementById(`cp-card-${cp.id}`);
         const pillEl = document.getElementById(`pill-${cp.id}`);
         if (cardEl && pillEl) {
@@ -3671,22 +3563,6 @@
             cardEl.classList.add('active-guarding');
             pillEl.classList.add('status-active');
             pillEl.innerText = isEscort ? "🚨 随行警備中" : "🚨 警戒中";
-          } else if (cardState === 'joining') {
-            cardEl.classList.add('active-guarding');
-            cardEl.style.borderColor = "#3182ce";
-            pillEl.classList.add('status-active');
-            pillEl.style.background = "#bee3f8";
-            pillEl.style.color = "#2b6cb0";
-            pillEl.style.borderColor = "#90cdf4";
-            pillEl.innerText = "🚶 合流移動中";
-          } else if (cardState === 'joined') {
-            cardEl.classList.add('active-guarding');
-            cardEl.style.borderColor = "#d69e2e";
-            pillEl.classList.add('status-active');
-            pillEl.style.background = "#fefcbf";
-            pillEl.style.color = "#744210";
-            pillEl.style.borderColor = "#faf089";
-            pillEl.innerText = "🚨 随行合流中";
           } else if (cardState === 'past') {
             cardEl.classList.add('past-guarding');
             pillEl.classList.add('status-ended');
@@ -3698,19 +3574,13 @@
         }
       });
 
-      // 非アクティブになった随行マーカーを非表示にする（チラつき防止）
-      escortMarkersMap.forEach((marker, key) => {
-        if (!activeEscortKeys.has(key)) {
-          if (marker.getMap()) marker.setMap(null);
-        }
-      });
-
       // ========================================================
-      // ★★★ 屋台から次の定点警備への先回り移動判定 ＆ 定点から随行への合流移動判定 ★★★
+      // ★★★ 警備ポイント ⇄ 屋台（随行警備）の動的移動アニメーション ★★★
+      // （御花回収と同様に、警備ポイントと屋台の間をアイコンが移動する表現）
       // ========================================================
       const deployingGuardsList = [];
 
-      // 班ごとに任務を時系列で整理し、屋台随行/合流終了から次の定点警備への移動、または定点警備から随行警備への移動を検出
+      // 班ごとに任務を時系列で整理
       const teamDutyMap = {};
       appState.checkpoints.forEach(cp => {
         const t = cp.team && cp.team.trim() !== "" ? cp.team.trim() : null;
@@ -3720,86 +3590,37 @@
       });
 
       for (const [tName, duties] of Object.entries(teamDutyMap)) {
-        if (duties.length < 2) continue;
         duties.sort((a, b) => timeToMinutes(a.guardStart || "00:00") - timeToMinutes(b.guardStart || "00:00"));
+        const tColor = getTeamColor(tName);
 
-        for (let i = 0; i < duties.length - 1; i++) {
+        for (let i = 0; i < duties.length; i++) {
           const curDuty = duties[i];
-          const nextDuty = duties[i + 1];
+          const nextDuty = i < duties.length - 1 ? duties[i + 1] : null;
 
           const isCurEscort = curDuty.type === 'escort';
-          const isCurJoined = curDuty.afterAction === 'join_yatai';
-          const isNextEscort = nextDuty.type === 'escort';
+          const isNextEscort = nextDuty && nextDuty.type === 'escort';
 
-          // パターン1: 屋台（随行または合流） ➔ 次の定点警備へ先回り
-          if ((isCurEscort || isCurJoined) && !isNextEscort) {
-            let leaveMins = 0;
-            if (isCurEscort) {
-              leaveMins = timeToMinutes(curDuty.guardEnd || "00:00");
-            } else {
-              leaveMins = curDuty.joinEnd ? timeToMinutes(curDuty.joinEnd) : (timeToMinutes(curDuty.guardEnd || "00:00") + (curDuty.joinDuration || 10));
-            }
-            const nextStartMins = timeToMinutes(nextDuty.guardStart || "00:00");
-
-            if (curMins >= leaveMins && curMins < nextStartMins) {
-              const moveDuration = Math.max(1, nextStartMins - leaveMins);
-              const ratio = Math.max(0, Math.min(1, (curMins - leaveMins) / moveDuration));
-              const tColor = getTeamColor(tName);
-
-              if (yataiLatLng && isGuardVisible && map && window.google && google.maps.geometry) {
-                const targetLatLng = new google.maps.LatLng(nextDuty.lat, nextDuty.lng);
-                const currentMoveLatLng = google.maps.geometry.spherical.interpolate(yataiLatLng, targetLatLng, ratio);
-
-                // 屋台から次の地点への先回り破線
-                const deployLine = new google.maps.Polyline({
-                  path: [yataiLatLng, currentMoveLatLng, targetLatLng],
-                  strokeColor: tColor,
-                  strokeOpacity: 0,
-                  icons: [{
-                    icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 2.5 },
-                    offset: '0',
-                    repeat: '10px'
-                  }, {
-                    icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2.2, fillColor: tColor, fillOpacity: 1 },
-                    offset: '75%'
-                  }],
-                  map: map,
-                  zIndex: 8600
-                });
-                joinPolylines.push(deployLine);
-
-                // 先回り移動マーカー
-                const deployMarker = new google.maps.Marker({
-                  position: currentMoveLatLng,
-                  map: map,
-                  icon: createDeployingMarkerIcon(tName, nextDuty.symbol, nextDuty.name),
-                  title: `[先回り移動中] ${tName}（屋台 ➔ [${nextDuty.symbol}] ${nextDuty.name} へ移動中）`,
-                  zIndex: 9750
-                });
-                deployMarker.addListener('click', () => openCheckpointModalById(nextDuty.id));
-                joinMovingMarkers.push(deployMarker);
-              }
-              const remainMin = Math.ceil(nextStartMins - curMins);
-              deployingGuardsList.push(`${tName} (屋台➔[${nextDuty.symbol}]${nextDuty.name}へ先回り中・あと${remainMin}分)`);
-            }
-          }
-
-          // パターン2: 定点警備 ➔ 随行警備（屋台）への移動合流（定点側でjoin_yataiにチェックがなくても自動判定！）
-          if (!isCurEscort && !isCurJoined && isNextEscort) {
+          // ★ パターン1: 定点警備 ➔ 随行警備（屋台）（警備ポイントから屋台への合流移動！）
+          // 次が随行警備、または定点警備で「屋台合流」が設定されている場合
+          if (!isCurEscort && (isNextEscort || curDuty.afterAction === 'join_yatai')) {
             const curEndMins = timeToMinutes(curDuty.guardEnd || "00:00");
-            const nextStartMins = timeToMinutes(nextDuty.guardStart || "00:00");
+            const joinDuration = curDuty.joinDuration || 10;
+            const targetArrMins = isNextEscort 
+              ? timeToMinutes(nextDuty.guardStart || "00:00")
+              : (curEndMins + joinDuration);
+            const targetPosType = isNextEscort ? (nextDuty.escortPosition || 'front') : (curDuty.joinPosition || 'front');
 
-            if (curMins >= curEndMins && curMins < nextStartMins) {
-              const moveDuration = Math.max(1, nextStartMins - curEndMins);
+            if (curMins >= curEndMins && curMins < targetArrMins) {
+              const moveDuration = Math.max(1, targetArrMins - curEndMins);
               const ratio = Math.max(0, Math.min(1, (curMins - curEndMins) / moveDuration));
-              const tColor = getTeamColor(tName);
               const fromLatLng = new google.maps.LatLng(curDuty.lat, curDuty.lng);
 
               if (yataiLatLng && isGuardVisible && map && window.google && google.maps.geometry) {
-                const targetEscortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, nextDuty.escortPosition || 'front');
+                const targetEscortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, targetPosType);
                 const targetLatLng = new google.maps.LatLng(targetEscortCoords.lat, targetEscortCoords.lng);
                 const currentMoveLatLng = google.maps.geometry.spherical.interpolate(fromLatLng, targetLatLng, ratio);
 
+                // 警備ポイントから屋台への誘導破線
                 const joinLine = new google.maps.Polyline({
                   path: [fromLatLng, currentMoveLatLng, targetLatLng],
                   strokeColor: tColor,
@@ -3817,23 +3638,195 @@
                 });
                 joinPolylines.push(joinLine);
 
-                const moveMarker = new google.maps.Marker({
-                  position: currentMoveLatLng,
+                // 移動中マーカー（チラつき防止：インスタンス再利用）
+                const markerKey = `join_${curDuty.id}_to_yatai`;
+                activeJoinMovingKeys.add(markerKey);
+
+                let moveMarker = joinMovingMarkersMap.get(markerKey);
+                if (!moveMarker) {
+                  moveMarker = new google.maps.Marker({
+                    position: currentMoveLatLng,
+                    map: map,
+                    icon: createJoiningMarkerIcon(tName, curDuty.name),
+                    title: `[屋台へ合流移動中] ${tName}（[${curDuty.symbol}] ${curDuty.name} ➔ 屋台へ移動中）`,
+                    zIndex: 9700
+                  });
+                  moveMarker.addListener('click', () => openCheckpointModalById(curDuty.id));
+                  moveMarker._stateKey = `${tName}_${curDuty.name}`;
+                  joinMovingMarkersMap.set(markerKey, moveMarker);
+                } else {
+                  if (moveMarker.getMap() !== map) moveMarker.setMap(map);
+                  moveMarker.setPosition(currentMoveLatLng);
+                  const stateKey = `${tName}_${curDuty.name}`;
+                  if (moveMarker._stateKey !== stateKey) {
+                    moveMarker.setIcon(createJoiningMarkerIcon(tName, curDuty.name));
+                    moveMarker.setTitle(`[屋台へ合流移動中] ${tName}（[${curDuty.symbol}] ${curDuty.name} ➔ 屋台へ移動中）`);
+                    moveMarker._stateKey = stateKey;
+                  }
+                }
+              }
+
+              const remainMin = Math.ceil(targetArrMins - curMins);
+              joiningGuardsList.push(`${tName} ([${curDuty.symbol}]➔屋台[${getPosLabel(targetPosType)}]へ移動中・あと${remainMin}分)`);
+
+              // カードの合流移動中表示
+              const cardEl = document.getElementById(`cp-card-${curDuty.id}`);
+              const pillEl = document.getElementById(`pill-${curDuty.id}`);
+              if (cardEl && pillEl) {
+                cardEl.classList.add('active-guarding');
+                cardEl.style.borderColor = "#3182ce";
+                pillEl.classList.add('status-active');
+                pillEl.style.background = "#bee3f8";
+                pillEl.style.color = "#2b6cb0";
+                pillEl.style.borderColor = "#90cdf4";
+                pillEl.innerText = `🚶 屋台へ合流中 (あと${remainMin}分)`;
+              }
+            } else if (!isNextEscort && curDuty.afterAction === 'join_yatai') {
+              // 単独合流完了後、屋台随行フェーズ
+              const joinFinalMins = curDuty.joinEnd ? timeToMinutes(curDuty.joinEnd) : timeToMinutes(appState.endTime);
+              if (curMins >= targetArrMins && curMins <= joinFinalMins) {
+                activeGuardsList.push(`[屋台${getPosLabel(curDuty.joinPosition)}随行(合流)] ${tName}(${curDuty.guards}名)`);
+                activeEscortsList.push(`[${getPosLabel(curDuty.joinPosition)}] ${tName}(${curDuty.guards}名・合流)`);
+
+                if (yataiLatLng && isGuardVisible && map) {
+                  const escortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, curDuty.joinPosition || 'front');
+                  const markerKey = `joined_${curDuty.id}`;
+                  activeEscortKeys.add(markerKey);
+
+                  let marker = escortMarkersMap.get(markerKey);
+                  if (!marker) {
+                    marker = new google.maps.Marker({
+                      position: escortCoords,
+                      map: map,
+                      icon: createEscortMarkerIcon(tName, curDuty.guards, curDuty.joinPosition || 'front'),
+                      title: `[屋台${getPosLabel(curDuty.joinPosition)}随行(合流済)] ${tName} (${curDuty.guards}名)`,
+                      zIndex: 9600
+                    });
+                    marker.addListener('click', () => openCheckpointModalById(curDuty.id));
+                    marker._stateKey = `${tName}_${curDuty.guards}_${curDuty.joinPosition}`;
+                    escortMarkersMap.set(markerKey, marker);
+                  } else {
+                    if (marker.getMap() !== map) marker.setMap(map);
+                    marker.setPosition(escortCoords);
+                    const stateKey = `${tName}_${curDuty.guards}_${curDuty.joinPosition}`;
+                    if (marker._stateKey !== stateKey) {
+                      marker.setIcon(createEscortMarkerIcon(tName, curDuty.guards, curDuty.joinPosition || 'front'));
+                      marker.setTitle(`[屋台${getPosLabel(curDuty.joinPosition)}随行(合流済)] ${tName} (${curDuty.guards}名)`);
+                      marker._stateKey = stateKey;
+                    }
+                  }
+                }
+
+                const cardEl = document.getElementById(`cp-card-${curDuty.id}`);
+                const pillEl = document.getElementById(`pill-${curDuty.id}`);
+                if (cardEl && pillEl) {
+                  cardEl.classList.add('active-guarding');
+                  cardEl.style.borderColor = "#d69e2e";
+                  pillEl.classList.add('status-active');
+                  pillEl.style.background = "#fefcbf";
+                  pillEl.style.color = "#744210";
+                  pillEl.style.borderColor = "#faf089";
+                  pillEl.innerText = "🚨 随行合流中";
+                }
+              }
+            }
+          }
+
+          // ★ パターン2: 随行警備（屋台） ➔ 警備ポイント（屋台から警備ポイントへの先回り移動！）
+          if (isCurEscort && nextDuty && !isNextEscort) {
+            const curEndMins = timeToMinutes(curDuty.guardEnd || "00:00");
+            const nextStartMins = timeToMinutes(nextDuty.guardStart || "00:00");
+
+            if (curMins >= curEndMins && curMins < nextStartMins) {
+              const moveDuration = Math.max(1, nextStartMins - curEndMins);
+              const ratio = Math.max(0, Math.min(1, (curMins - curEndMins) / moveDuration));
+              const curPosType = curDuty.escortPosition || 'front';
+
+              if (yataiLatLng && isGuardVisible && map && window.google && google.maps.geometry) {
+                const escortCoords = getEscortOffsetCoords(yataiLatLng, yataiHeading, curPosType);
+                const fromLatLng = new google.maps.LatLng(escortCoords.lat, escortCoords.lng);
+                const targetLatLng = new google.maps.LatLng(nextDuty.lat, nextDuty.lng);
+                const currentMoveLatLng = google.maps.geometry.spherical.interpolate(fromLatLng, targetLatLng, ratio);
+
+                // 屋台から次の警備ポイントへの誘導破線
+                const deployLine = new google.maps.Polyline({
+                  path: [fromLatLng, currentMoveLatLng, targetLatLng],
+                  strokeColor: tColor,
+                  strokeOpacity: 0,
+                  icons: [{
+                    icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 2.5 },
+                    offset: '0',
+                    repeat: '10px'
+                  }, {
+                    icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2.2, fillColor: tColor, fillOpacity: 1 },
+                    offset: '75%'
+                  }],
                   map: map,
-                  icon: createJoiningMarkerIcon(tName, curDuty.name),
-                  title: `[随行合流移動中] ${tName}（[${curDuty.symbol}] ${curDuty.name} ➔ 屋台へ移動中）`,
-                  zIndex: 9700
+                  zIndex: 8600
                 });
-                moveMarker.addListener('click', () => openCheckpointModalById(nextDuty.id));
-                joinMovingMarkers.push(moveMarker);
+                joinPolylines.push(deployLine);
+
+                // 先回り移動マーカー（チラつき防止：インスタンス再利用）
+                const markerKey = `deploy_${curDuty.id}_to_${nextDuty.id}`;
+                activeJoinMovingKeys.add(markerKey);
+
+                let deployMarker = joinMovingMarkersMap.get(markerKey);
+                if (!deployMarker) {
+                  deployMarker = new google.maps.Marker({
+                    position: currentMoveLatLng,
+                    map: map,
+                    icon: createDeployingMarkerIcon(tName, nextDuty.symbol, nextDuty.name),
+                    title: `[先回り移動中] ${tName}（屋台 ➔ [${nextDuty.symbol}] ${nextDuty.name} へ移動中）`,
+                    zIndex: 9750
+                  });
+                  deployMarker.addListener('click', () => openCheckpointModalById(nextDuty.id));
+                  deployMarker._stateKey = `${tName}_${nextDuty.symbol}_${nextDuty.name}`;
+                  joinMovingMarkersMap.set(markerKey, deployMarker);
+                } else {
+                  if (deployMarker.getMap() !== map) deployMarker.setMap(map);
+                  deployMarker.setPosition(currentMoveLatLng);
+                  const stateKey = `${tName}_${nextDuty.symbol}_${nextDuty.name}`;
+                  if (deployMarker._stateKey !== stateKey) {
+                    deployMarker.setIcon(createDeployingMarkerIcon(tName, nextDuty.symbol, nextDuty.name));
+                    deployMarker.setTitle(`[先回り移動中] ${tName}（屋台 ➔ [${nextDuty.symbol}] ${nextDuty.name} へ移動中）`);
+                    deployMarker._stateKey = stateKey;
+                  }
+                }
               }
 
               const remainMin = Math.ceil(nextStartMins - curMins);
-              joiningGuardsList.push(`${tName} ([${curDuty.symbol}]➔屋台[${getPosLabel(nextDuty.escortPosition)}]へ移動中・あと${remainMin}分)`);
+              deployingGuardsList.push(`${tName} (屋台➔[${nextDuty.symbol}]${nextDuty.name}へ先回り中・あと${remainMin}分)`);
+
+              // 次の地点カードの先回り中表示
+              const cardEl = document.getElementById(`cp-card-${nextDuty.id}`);
+              const pillEl = document.getElementById(`pill-${nextDuty.id}`);
+              if (cardEl && pillEl) {
+                cardEl.classList.add('active-guarding');
+                cardEl.style.borderColor = "#c53030";
+                pillEl.classList.add('status-active');
+                pillEl.style.background = "#fed7d7";
+                pillEl.style.color = "#9b2c2c";
+                pillEl.style.borderColor = "#feb2b2";
+                pillEl.innerText = `🏃 先回り中 (あと${remainMin}分)`;
+              }
             }
           }
         }
       }
+
+      // 非アクティブになった随行マーカーを非表示
+      escortMarkersMap.forEach((marker, key) => {
+        if (!activeEscortKeys.has(key)) {
+          if (marker.getMap()) marker.setMap(null);
+        }
+      });
+
+      // 非アクティブになった警備移動中マーカーを非表示
+      joinMovingMarkersMap.forEach((marker, key) => {
+        if (!activeJoinMovingKeys.has(key)) {
+          if (marker.getMap()) marker.setMap(null);
+        }
+      });
 
       // ステータス表示の更新
       document.getElementById('active-guard-points').innerText = activeGuardsList.length > 0 ? activeGuardsList.join(", ") : "なし";
@@ -3873,11 +3866,10 @@
       // ★★★ 御花回収班の屋台随行 ＆ 連続回収動線の制御 (案A) ★★★
       // ========================================================
 
-      // 古い御花往復線・移動マーカー・屋台御花マーカーをクリア
+      // 古い御花往復線（破線）をクリア
       ohanaTripPolylines.forEach(p => p.setMap(null));
       ohanaTripPolylines = [];
-      ohanaMovingMarkers.forEach(m => m.setMap(null));
-      ohanaMovingMarkers = [];
+      const activeOhanaMovingKeys = new Set(); // 今回アクティブな御花移動マーカーキー
       
 
       const ohanaConfig = appState.ohanaConfig || { frontCount: 2, rearCount: 2 };
@@ -3982,16 +3974,32 @@
                 });
                 ohanaTripPolylines.push(tripLine);
 
-                // 移動マーカー
-                const moveMarker = new google.maps.Marker({
-                  position: curMoveLatLng,
-                  map: map,
-                  icon: createOhanaMovingMarkerIcon(subState, op.name, sectionLabel),
-                  title: isContinueFromPrev ? `[地点間移動] ${sectionLabel}（${prevOp.name} ➔ ${op.name}）` : `[回収へ急行中] ${sectionLabel} ➔ ${op.name}`,
-                  zIndex: 9800
-                });
-                moveMarker.addListener('click', () => openOhanaModalById(op.id));
-                ohanaMovingMarkers.push(moveMarker);
+                // 移動マーカー（チラつき防止：インスタンス再利用）
+                const markerKey = `outbound_${op.id}`;
+                activeOhanaMovingKeys.add(markerKey);
+
+                let moveMarker = ohanaMovingMarkersMap.get(markerKey);
+                if (!moveMarker) {
+                  moveMarker = new google.maps.Marker({
+                    position: curMoveLatLng,
+                    map: map,
+                    icon: createOhanaMovingMarkerIcon(subState, op.name, sectionLabel),
+                    title: isContinueFromPrev ? `[地点間移動] ${sectionLabel}（${prevOp.name} ➔ ${op.name}）` : `[回収へ急行中] ${sectionLabel} ➔ ${op.name}`,
+                    zIndex: 9800
+                  });
+                  moveMarker.addListener('click', () => openOhanaModalById(op.id));
+                  moveMarker._stateKey = `${subState}_${op.name}_${sectionLabel}`;
+                  ohanaMovingMarkersMap.set(markerKey, moveMarker);
+                } else {
+                  if (moveMarker.getMap() !== map) moveMarker.setMap(map);
+                  moveMarker.setPosition(curMoveLatLng);
+                  const stateKey = `${subState}_${op.name}_${sectionLabel}`;
+                  if (moveMarker._stateKey !== stateKey) {
+                    moveMarker.setIcon(createOhanaMovingMarkerIcon(subState, op.name, sectionLabel));
+                    moveMarker.setTitle(isContinueFromPrev ? `[地点間移動] ${sectionLabel}（${prevOp.name} ➔ ${op.name}）` : `[回収へ急行中] ${sectionLabel} ➔ ${op.name}`);
+                    moveMarker._stateKey = stateKey;
+                  }
+                }
               }
 
               const rem = Math.ceil(sM - curMins);
@@ -4036,15 +4044,31 @@
                 });
                 ohanaTripPolylines.push(returnLine);
 
-                const returnMarker = new google.maps.Marker({
-                  position: curReturnLatLng,
-                  map: map,
-                  icon: createOhanaMovingMarkerIcon('inbound', op.name, sectionLabel),
-                  title: `[屋台へ帰還中] ${sectionLabel}（${op.name} ➔ 屋台へ復帰中）`,
-                  zIndex: 9800
-                });
-                returnMarker.addListener('click', () => openOhanaModalById(op.id));
-                ohanaMovingMarkers.push(returnMarker);
+                const markerKey = `inbound_${op.id}`;
+                activeOhanaMovingKeys.add(markerKey);
+
+                let returnMarker = ohanaMovingMarkersMap.get(markerKey);
+                if (!returnMarker) {
+                  returnMarker = new google.maps.Marker({
+                    position: curReturnLatLng,
+                    map: map,
+                    icon: createOhanaMovingMarkerIcon('inbound', op.name, sectionLabel),
+                    title: `[屋台へ帰還中] ${sectionLabel}（${op.name} ➔ 屋台へ復帰中）`,
+                    zIndex: 9800
+                  });
+                  returnMarker.addListener('click', () => openOhanaModalById(op.id));
+                  returnMarker._stateKey = `inbound_${op.name}_${sectionLabel}`;
+                  ohanaMovingMarkersMap.set(markerKey, returnMarker);
+                } else {
+                  if (returnMarker.getMap() !== map) returnMarker.setMap(map);
+                  returnMarker.setPosition(curReturnLatLng);
+                  const stateKey = `inbound_${op.name}_${sectionLabel}`;
+                  if (returnMarker._stateKey !== stateKey) {
+                    returnMarker.setIcon(createOhanaMovingMarkerIcon('inbound', op.name, sectionLabel));
+                    returnMarker.setTitle(`[屋台へ帰還中] ${sectionLabel}（${op.name} ➔ 屋台へ復帰中）`);
+                    returnMarker._stateKey = stateKey;
+                  }
+                }
               }
 
               const rem = Math.ceil(activeEndMins - curMins);
@@ -4120,6 +4144,13 @@
               pillEl.innerText = '待機中';
             }
           }
+        }
+      });
+
+      // 非アクティブになった御花移動マーカーを非表示（チラつき防止）
+      ohanaMovingMarkersMap.forEach((marker, key) => {
+        if (!activeOhanaMovingKeys.has(key)) {
+          if (marker.getMap()) marker.setMap(null);
         }
       });
 
