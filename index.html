@@ -3736,18 +3736,21 @@
               }
             } else if (curMins >= targetArrMins) {
               // ★ 合流完了後：設定した屋台位置（targetPosType）で随行警備を行う！
-              // 次の随行警備（nextDuty）がある場合は、その開始時刻までこの位置で随行！
-              // 次の随行警備の開始時刻に達したら、nextDuty側の設定位置にスムーズに切り替わる！
+              // ユーザーが定点警備モーダルで設定した「合流後の警備終了時刻（解散予定）」を厳密に最優先！
               let joinFinalMins = curDuty.joinEnd ? timeToMinutes(curDuty.joinEnd) : timeToMinutes(appState.endTime);
+              
               if (isNextEscort) {
-                joinFinalMins = timeToMinutes(nextDuty.guardStart || "00:00");
+                // 次の随行警備がある場合も、curDuty.joinEnd を超えて残らないよう早い方で終了！
+                const nextStart = timeToMinutes(nextDuty.guardStart || "00:00");
+                joinFinalMins = Math.min(joinFinalMins, nextStart);
               } else if (nextDuty && nextDuty.type !== 'escort') {
+                // 次の定点警備がある場合、その先回り移動開始時刻と curDuty.joinEnd の早い方で終了！
                 const nextStart = timeToMinutes(nextDuty.guardStart || "00:00");
                 const nextMoveDur = nextDuty.joinDuration ? parseInt(nextDuty.joinDuration, 10) : 10;
                 joinFinalMins = Math.min(joinFinalMins, nextStart - nextMoveDur);
               }
 
-              // 次の随行警備が始まる前（または単独合流の終了前）まで、定点で設定した合流位置に表示
+              // ★ 合流後の警備期間中（targetArrMins 〜 joinFinalMins）のみアイコンを表示！
               if (curMins <= joinFinalMins && (!isNextEscort || curMins < nextStartMins)) {
                 activeGuardsList.push(`[屋台${getPosLabel(targetPosType)}随行(合流)] ${tName}(${curDuty.guards}名)`);
                 activeEscortsList.push(`[${getPosLabel(targetPosType)}] ${tName}(${curDuty.guards}名・合流)`);
@@ -3791,6 +3794,21 @@
                   pillEl.style.color = "#744210";
                   pillEl.style.borderColor = "#faf089";
                   pillEl.innerText = `🚨 随行[${getPosLabel(targetPosType)}]合流中`;
+                }
+              } else if (curMins > joinFinalMins) {
+                // ★ 合流後の警備終了時刻を過ぎたら、確実にカードを解除済（past）にする！
+                const cardEl = document.getElementById(`cp-card-${curDuty.id}`);
+                const pillEl = document.getElementById(`pill-${curDuty.id}`);
+                if (cardEl && pillEl) {
+                  cardEl.classList.remove('active-guarding');
+                  cardEl.classList.add('past-guarding');
+                  cardEl.style.borderColor = "";
+                  pillEl.classList.remove('status-active', 'status-waiting');
+                  pillEl.classList.add('status-ended');
+                  pillEl.style.background = "";
+                  pillEl.style.color = "";
+                  pillEl.style.borderColor = "";
+                  pillEl.innerText = "✓ 解除済";
                 }
               }
             }
