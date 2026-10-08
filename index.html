@@ -1924,19 +1924,20 @@
     }
 
 
-    function createJoiningMarkerIcon(teamName, fromName) {
+    function createJoiningMarkerIcon(teamName, fromName, actionLabel) {
       const teamColor = getTeamColor(teamName);
+      const labelText = actionLabel || "移動中";
       return {
         url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-          <svg xmlns="http://www.w3.org/2000/svg" width="105" height="36" viewBox="0 0 105 36">
-            <rect x="2" y="2" width="101" height="32" rx="7" fill="#FFFFFF" stroke="${teamColor}" stroke-width="2.2"/>
+          <svg xmlns="http://www.w3.org/2000/svg" width="112" height="36" viewBox="0 0 112 36">
+            <rect x="2" y="2" width="108" height="32" rx="7" fill="#FFFFFF" stroke="${teamColor}" stroke-width="2.2"/>
             <circle cx="17" cy="18" r="11" fill="${teamColor}"/>
             <text x="17" y="22" font-size="11" text-anchor="middle" fill="#FFFFFF">🚶</text>
             <text x="32" y="16" font-size="10" font-weight="bold" fill="${teamColor}">${teamName || '警備班'}</text>
-            <text x="32" y="28" font-size="9" font-weight="bold" fill="#2B6CB0">屋台へ合流中</text>
+            <text x="32" y="28" font-size="9" font-weight="bold" fill="#2B6CB0">${labelText}</text>
           </svg>
         `),
-        scaledSize: new google.maps.Size(105, 36),
+        scaledSize: new google.maps.Size(112, 36),
         anchor: new google.maps.Point(17, 18)
       };
     }
@@ -2789,74 +2790,9 @@
 
 
     function renderTeamMovePaths() {
+      // ★ 静的な常時表示の線は非表示とする（随行警備と同様に、シミュレーション移動時のみ動線を描画）
       teamPolylines.forEach(p => p.setMap(null));
       teamPolylines = [];
-
-      if (!appState.showTeamPaths || !window.google || !map) return;
-
-      const teams = {};
-      appState.checkpoints.forEach(cp => {
-        if (!cp.team || cp.team.trim() === "") return;
-        if (!teams[cp.team]) teams[cp.team] = [];
-        teams[cp.team].push(cp);
-      });
-
-      for (const [teamName, points] of Object.entries(teams)) {
-        if (points.length < 2) continue;
-
-        points.sort((a, b) => timeToMinutes(a.guardStart || "00:00") - timeToMinutes(b.guardStart || "00:00"));
-        
-        // ★ 随行警備（屋台）との間は常時の線を表示しない！
-        // 定点警備同士が連続するセグメントのみ線を引く
-        const segments = [];
-        let currentSegment = [];
-
-        for (let i = 0; i < points.length; i++) {
-          const cp = points[i];
-          const isEscort = cp.type === 'escort';
-          const isJoinYatai = !isEscort && cp.afterAction === 'join_yatai';
-
-          if (!isEscort && (cp.lat !== 0 || cp.lng !== 0)) {
-            currentSegment.push({ lat: cp.lat, lng: cp.lng });
-            // ★ 定点警備終了後に「屋台に合流する」を選択している場合、
-            // 次の地点（定点であっても）へ直接移動するわけではないため、直接結ぶ線は非表示にする！
-            if (isJoinYatai) {
-              if (currentSegment.length >= 2) {
-                segments.push(currentSegment);
-              }
-              currentSegment = [];
-            }
-          } else {
-            // 随行警備が挟まったらセグメントを区切る（屋台との間の線は非表示）
-            if (currentSegment.length >= 2) {
-              segments.push(currentSegment);
-            }
-            currentSegment = [];
-          }
-        }
-        if (currentSegment.length >= 2) {
-          segments.push(currentSegment);
-        }
-
-        const color = getTeamColor(teamName);
-        segments.forEach(segCoords => {
-          const poly = new google.maps.Polyline({
-            path: segCoords,
-            strokeColor: color,
-            strokeOpacity: 0,
-            icons: [{
-              icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },
-              offset: '0',
-              repeat: '14px'
-            }, {
-              icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2.5, fillColor: color, fillOpacity: 1 },
-              offset: '50%'
-            }],
-            map: map
-          });
-          teamPolylines.push(poly);
-        });
-      }
     }
 
 
@@ -3957,6 +3893,120 @@
                 pillEl.style.color = "#9b2c2c";
                 pillEl.style.borderColor = "#feb2b2";
                 pillEl.innerText = `🏃 先回り中 (あと${remainMin}分)`;
+              }
+            } else if (moveDuration > 0 && curMins >= arriveMins && curMins < nextStartMins) {
+              // 移動完了後、定点警備の開始時刻までの待機時間がある場合
+              const cardEl = document.getElementById(`cp-card-${nextDuty.id}`);
+              const pillEl = document.getElementById(`pill-${nextDuty.id}`);
+              if (cardEl && pillEl) {
+                cardEl.classList.remove('active-guarding');
+                pillEl.classList.remove('status-active');
+                pillEl.classList.add('status-waiting');
+                pillEl.innerText = "現地待機中";
+              }
+            }
+          }
+
+          // ★ パターン3: 定点警備 ➔ 次の定点警備（直接移動！）
+          // 常時の静的な線は引かず、随行警備と同様に、警備間の移動時のみ動線破線と移動マーカーを表示して可視化！
+          const isFixedToFixed = !isCurEscort && curDuty.afterAction !== 'join_yatai' && nextDuty && !isNextEscort;
+          if (isFixedToFixed) {
+            const curEndMins = timeToMinutes(curDuty.guardEnd || "00:00");
+            const nextStartMins = timeToMinutes(nextDuty.guardStart || "00:00");
+            const setDuration = nextDuty.joinDuration ? parseInt(nextDuty.joinDuration, 10) : 10;
+            const idealDepart = nextStartMins - setDuration;
+
+            let departMins = curEndMins;
+            let arriveMins = nextStartMins;
+            let moveDuration = setDuration;
+
+            if (idealDepart >= curEndMins) {
+              // 間隔が長い場合: 次の定点開始時刻に合わせて(開始のsetDuration分前に)出発！
+              departMins = idealDepart;
+              arriveMins = nextStartMins;
+              moveDuration = setDuration;
+            } else if (nextStartMins > curEndMins) {
+              // 間隔が近い場合: 地点1終了時刻に出発し、地点2開始時刻に到着！
+              departMins = curEndMins;
+              arriveMins = nextStartMins;
+              moveDuration = nextStartMins - curEndMins;
+            } else {
+              // 同時刻または重複
+              departMins = curEndMins;
+              arriveMins = curEndMins;
+              moveDuration = 0;
+            }
+
+            // 移動期間中（departMins 〜 arriveMins）に地点1から地点2への誘導破線と移動マーカーを表示
+            if (moveDuration > 0 && curMins >= departMins && curMins < arriveMins) {
+              const ratio = Math.max(0, Math.min(1, (curMins - departMins) / moveDuration));
+
+              if (isGuardVisible && map && window.google && google.maps.geometry && curDuty.lat && nextDuty.lat) {
+                const fromLatLng = new google.maps.LatLng(curDuty.lat, curDuty.lng);
+                const targetLatLng = new google.maps.LatLng(nextDuty.lat, nextDuty.lng);
+                const currentMoveLatLng = google.maps.geometry.spherical.interpolate(fromLatLng, targetLatLng, ratio);
+
+                // 地点1から地点2への誘導破線（移動時のみ動的に出現！）
+                const moveLine = new google.maps.Polyline({
+                  path: [fromLatLng, currentMoveLatLng, targetLatLng],
+                  strokeColor: tColor,
+                  strokeOpacity: 0,
+                  icons: [{
+                    icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.9, scale: 2.5 },
+                    offset: '0',
+                    repeat: '10px'
+                  }, {
+                    icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 2.2, fillColor: tColor, fillOpacity: 1 },
+                    offset: '75%'
+                  }],
+                  map: map,
+                  zIndex: 8600
+                });
+                joinPolylines.push(moveLine);
+
+                // 移動中マーカー（チラつき防止：インスタンス再利用）
+                const markerKey = `move_${curDuty.id}_to_${nextDuty.id}`;
+                activeJoinMovingKeys.add(markerKey);
+
+                let moveMarker = joinMovingMarkersMap.get(markerKey);
+                const actionLabel = `[${nextDuty.symbol}]へ移動中`;
+                if (!moveMarker) {
+                  moveMarker = new google.maps.Marker({
+                    position: currentMoveLatLng,
+                    map: map,
+                    icon: createJoiningMarkerIcon(tName, curDuty.name, actionLabel),
+                    title: `[地点間移動中] ${tName}（[${curDuty.symbol}] ${curDuty.name} ➔ [${nextDuty.symbol}] ${nextDuty.name} へ移動中）`,
+                    zIndex: 9750
+                  });
+                  moveMarker.addListener('click', () => openCheckpointModalById(nextDuty.id));
+                  moveMarker._stateKey = `${tName}_${nextDuty.symbol}_fixed`;
+                  joinMovingMarkersMap.set(markerKey, moveMarker);
+                } else {
+                  if (moveMarker.getMap() !== map) moveMarker.setMap(map);
+                  moveMarker.setPosition(currentMoveLatLng);
+                  const stateKey = `${tName}_${nextDuty.symbol}_fixed`;
+                  if (moveMarker._stateKey !== stateKey) {
+                    moveMarker.setIcon(createJoiningMarkerIcon(tName, curDuty.name, actionLabel));
+                    moveMarker.setTitle(`[地点間移動中] ${tName}（[${curDuty.symbol}] ${curDuty.name} ➔ [${nextDuty.symbol}] ${nextDuty.name} へ移動中）`);
+                    moveMarker._stateKey = stateKey;
+                  }
+                }
+              }
+
+              const remainMin = Math.ceil(arriveMins - curMins);
+              deployingGuardsList.push(`${tName} ([${curDuty.symbol}]➔[${nextDuty.symbol}]${nextDuty.name}へ移動中・あと${remainMin}分)`);
+
+              // 次の地点カードの移動中表示
+              const cardEl = document.getElementById(`cp-card-${nextDuty.id}`);
+              const pillEl = document.getElementById(`pill-${nextDuty.id}`);
+              if (cardEl && pillEl) {
+                cardEl.classList.add('active-guarding');
+                cardEl.style.borderColor = "#3182ce";
+                pillEl.classList.add('status-active');
+                pillEl.style.background = "#bee3f8";
+                pillEl.style.color = "#2b6cb0";
+                pillEl.style.borderColor = "#90cdf4";
+                pillEl.innerText = `🚶 移動中 (あと${remainMin}分)`;
               }
             } else if (moveDuration > 0 && curMins >= arriveMins && curMins < nextStartMins) {
               // 移動完了後、定点警備の開始時刻までの待機時間がある場合
