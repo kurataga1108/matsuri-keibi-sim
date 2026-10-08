@@ -2814,9 +2814,18 @@
         for (let i = 0; i < points.length; i++) {
           const cp = points[i];
           const isEscort = cp.type === 'escort';
+          const isJoinYatai = !isEscort && cp.afterAction === 'join_yatai';
 
           if (!isEscort && (cp.lat !== 0 || cp.lng !== 0)) {
             currentSegment.push({ lat: cp.lat, lng: cp.lng });
+            // ★ 定点警備終了後に「屋台に合流する」を選択している場合、
+            // 次の地点（定点であっても）へ直接移動するわけではないため、直接結ぶ線は非表示にする！
+            if (isJoinYatai) {
+              if (currentSegment.length >= 2) {
+                segments.push(currentSegment);
+              }
+              currentSegment = [];
+            }
           } else {
             // 随行警備が挟まったらセグメントを区切る（屋台との間の線は非表示）
             if (currentSegment.length >= 2) {
