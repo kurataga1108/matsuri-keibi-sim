@@ -3525,6 +3525,7 @@
           if (isCurEscort) {
             let effStart = sM;
             let effEnd = eM;
+            let hasDeployAfter = false;
 
             // 直前に定点警備がある場合: 定点からの合流移動が完了するまで屋台には出さない！
             if (prevDuty && prevDuty.type !== 'escort') {
@@ -3533,14 +3534,22 @@
               effStart = Math.max(sM, prevEnd + moveDur);
             }
 
-            // 直後に定点警備がある場合: 定点への先回り移動を開始した瞬間に屋台から消す！
+            // 直後に定点警備がある場合: 随行終了時間と定点開始時間が近い場合でも綺麗に繋がるよう同期！
             if (nextDuty && nextDuty.type !== 'escort') {
               const nextStart = timeToMinutes(nextDuty.guardStart || "00:00");
-              const moveDur = nextDuty.joinDuration ? parseInt(nextDuty.joinDuration, 10) : 10;
-              effEnd = Math.min(eM, nextStart - moveDur);
+              const setDur = nextDuty.joinDuration ? parseInt(nextDuty.joinDuration, 10) : 10;
+              const gap = nextStart - eM;
+
+              if (gap <= 0) {
+                effEnd = Math.min(eM, nextStart);
+              } else {
+                // 間隔が近い場合も含め、随行終了時間(eM)まで屋台アイコンを表示し、eMから定点へ向けて移動する！
+                effEnd = eM;
+              }
+              hasDeployAfter = true;
             }
 
-            dutyEffectiveTimeMap.set(curDuty.id, { effStart, effEnd });
+            dutyEffectiveTimeMap.set(curDuty.id, { effStart, effEnd, hasDeployAfter });
           }
         }
       }
@@ -3560,7 +3569,13 @@
           const effEnd = effTimes.effEnd;
 
           // 実効期間中に屋台随行アイコンを表示
-          if (curMins >= effStart && curMins <= effEnd) {
+          // ※直後に定点警備への移動がある場合は、出発時刻(effEnd)の瞬間に移動アイコンへバトンタッチするため curMins < effEnd で切り替え
+          const isEndingWithDeploy = dutyEffectiveTimeMap.get(cp.id) && dutyEffectiveTimeMap.get(cp.id).hasDeployAfter;
+          const isEscortActiveNow = isEndingWithDeploy 
+            ? (curMins >= effStart && curMins < effEnd) 
+            : (curMins >= effStart && curMins <= effEnd);
+
+          if (isEscortActiveNow) {
             cardState = 'active';
             const escortLabel = `[屋台${getPosLabel(cp.escortPosition)}随行] ${cp.team || '警備班'}(${cp.guards}名)`;
             activeGuardsList.push(escortLabel);
@@ -3832,17 +3847,37 @@
           const isDutyLeavingYatai = isCurEscort || curDuty.afterAction === 'join_yatai';
           if (isDutyLeavingYatai && nextDuty && nextDuty.type !== 'escort') {
             const nextStartMins = timeToMinutes(nextDuty.guardStart || "00:00");
-            const curEndMins = timeToMinutes(curDuty.guardEnd || "00:00");
+            const curEndMins = isCurEscort 
+              ? timeToMinutes(curDuty.guardEnd || "00:00") 
+              : (curDuty.joinEnd ? timeToMinutes(curDuty.joinEnd) : timeToMinutes(appState.endTime));
             const setDuration = nextDuty.joinDuration ? parseInt(nextDuty.joinDuration, 10) : 10;
             
-            // 出発時刻：定点警備開始時刻の setDuration 分前
-            let departMins = nextStartMins - setDuration;
-            if (isCurEscort && curEndMins && curEndMins > departMins && curEndMins < nextStartMins) {
-              departMins = curEndMins;
-            }
-            const moveDuration = Math.max(1, nextStartMins - departMins);
+            // 随行終了時間と定点開始時間の間隔
+            const gap = nextStartMins - curEndMins;
 
-            if (curMins >= departMins && curMins < nextStartMins) {
+            let departMins = curEndMins;
+            let arriveMins = curEndMins + setDuration;
+            let moveDuration = setDuration;
+
+            if (gap <= 0) {
+              // 重複または同時刻: 移動なしで即座に切り替え
+              departMins = curEndMins;
+              arriveMins = curEndMins;
+              moveDuration = 0;
+            } else if (gap < setDuration) {
+              // ★ 終了時間と開始時間が近い場合: 随行終了時刻(curEndMins)から定点開始(nextStartMins)までのgap分間でピッタリ移動！
+              departMins = curEndMins;
+              arriveMins = nextStartMins;
+              moveDuration = gap;
+            } else {
+              // 十分な間隔がある場合: 随行終了時刻から設定移動時間(setDuration分)で移動
+              departMins = curEndMins;
+              arriveMins = curEndMins + setDuration;
+              moveDuration = setDuration;
+            }
+
+            // 移動期間中（departMins 〜 arriveMins）に移動マーカー・誘導破線を表示
+            if (moveDuration > 0 && curMins >= departMins && curMins < arriveMins) {
               const ratio = Math.max(0, Math.min(1, (curMins - departMins) / moveDuration));
               const curPosType = isCurEscort ? (curDuty.escortPosition || 'front') : (curDuty.joinPosition || 'front');
 
@@ -3898,7 +3933,7 @@
                 }
               }
 
-              const remainMin = Math.ceil(nextStartMins - curMins);
+              const remainMin = Math.ceil(arriveMins - curMins);
               deployingGuardsList.push(`${tName} (屋台➔[${nextDuty.symbol}]${nextDuty.name}へ先回り中・あと${remainMin}分)`);
 
               // 次の地点カードの先回り中表示
@@ -3912,6 +3947,16 @@
                 pillEl.style.color = "#9b2c2c";
                 pillEl.style.borderColor = "#feb2b2";
                 pillEl.innerText = `🏃 先回り中 (あと${remainMin}分)`;
+              }
+            } else if (moveDuration > 0 && curMins >= arriveMins && curMins < nextStartMins) {
+              // 移動完了後、定点警備の開始時刻までの待機時間がある場合
+              const cardEl = document.getElementById(`cp-card-${nextDuty.id}`);
+              const pillEl = document.getElementById(`pill-${nextDuty.id}`);
+              if (cardEl && pillEl) {
+                cardEl.classList.remove('active-guarding');
+                pillEl.classList.remove('status-active');
+                pillEl.classList.add('status-waiting');
+                pillEl.innerText = "現地待機中";
               }
             }
           }
