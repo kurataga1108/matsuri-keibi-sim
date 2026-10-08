@@ -2588,16 +2588,29 @@
     }
 
 
+    function deleteOhanaFromModal() {
+      const id = document.getElementById('modal-ohana-id').value;
+      const op = (appState.ohanaPoints || []).find(o => o.id === id);
+      const name = op ? `[御花] ${op.name}` : "この御花回収地点";
+      if (confirm(`${name} を削除しますか？`)) {
+        appState.ohanaPoints = (appState.ohanaPoints || []).filter(o => o.id !== id);
+        closeModal('ohana-modal');
+        renderOhana();
+        updateSimulationDisplay();
+        saveState();
+      }
+    }
+
     function deleteOhanaDirect(id) {
       const op = (appState.ohanaPoints || []).find(o => o.id === id);
       const name = op ? `[御花] ${op.name}` : "この地点";
       if (confirm(`${name} を削除しますか？`)) {
         appState.ohanaPoints = (appState.ohanaPoints || []).filter(o => o.id !== id);
         renderOhana();
+        updateSimulationDisplay();
         saveState();
       }
     }
-
 
     function clearAllOhana() {
       const list = appState.ohanaPoints || [];
@@ -2608,6 +2621,7 @@
       if (confirm(`登録されているすべての御花回収地点（全 ${list.length} 箇所）を一括消去しますか？\nこの操作は取り消せません。`)) {
         appState.ohanaPoints = [];
         renderOhana();
+        updateSimulationDisplay();
         saveState();
       }
     }
