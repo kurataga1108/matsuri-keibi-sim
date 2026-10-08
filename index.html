@@ -3534,17 +3534,20 @@
               effStart = Math.max(sM, prevEnd + moveDur);
             }
 
-            // 直後に定点警備がある場合: 随行終了時間と定点開始時間が近い場合でも綺麗に繋がるよう同期！
+            // 直後に定点警備がある場合: 間隔が長い場合は定点開始に合わせて屋台を離脱し、近い場合は随行終了時刻に出発！
             if (nextDuty && nextDuty.type !== 'escort') {
               const nextStart = timeToMinutes(nextDuty.guardStart || "00:00");
               const setDur = nextDuty.joinDuration ? parseInt(nextDuty.joinDuration, 10) : 10;
-              const gap = nextStart - eM;
+              const idealDepart = nextStart - setDur;
 
-              if (gap <= 0) {
-                effEnd = Math.min(eM, nextStart);
-              } else {
-                // 間隔が近い場合も含め、随行終了時間(eM)まで屋台アイコンを表示し、eMから定点へ向けて移動する！
+              if (idealDepart >= eM) {
+                // 間隔が長い場合: 定点警備開始の setDur 分前まで屋台に同行し、そこから先回り移動へ向かう！
+                effEnd = idealDepart;
+              } else if (nextStart > eM) {
+                // 間隔が近い場合: 随行終了時刻(eM)まで屋台にいて、そこから定点開始(nextStart)へ移動！
                 effEnd = eM;
+              } else {
+                effEnd = Math.min(eM, nextStart);
               }
               hasDeployAfter = true;
             }
@@ -3851,29 +3854,27 @@
               ? timeToMinutes(curDuty.guardEnd || "00:00") 
               : (curDuty.joinEnd ? timeToMinutes(curDuty.joinEnd) : timeToMinutes(appState.endTime));
             const setDuration = nextDuty.joinDuration ? parseInt(nextDuty.joinDuration, 10) : 10;
-            
-            // 随行終了時間と定点開始時間の間隔
-            const gap = nextStartMins - curEndMins;
+            const idealDepart = nextStartMins - setDuration;
 
             let departMins = curEndMins;
-            let arriveMins = curEndMins + setDuration;
+            let arriveMins = nextStartMins;
             let moveDuration = setDuration;
 
-            if (gap <= 0) {
-              // 重複または同時刻: 移動なしで即座に切り替え
+            if (idealDepart >= curEndMins) {
+              // ★ 間隔が長い場合: 定点警備の開始時刻に合わせて(開始のsetDuration分前に)屋台を出発！
+              departMins = idealDepart;
+              arriveMins = nextStartMins;
+              moveDuration = setDuration;
+            } else if (nextStartMins > curEndMins) {
+              // ★ 間隔が近い場合: 随行終了時刻(curEndMins)に屋台を出発し、定点開始(nextStartMins)に到着！
+              departMins = curEndMins;
+              arriveMins = nextStartMins;
+              moveDuration = nextStartMins - curEndMins;
+            } else {
+              // 同時刻または重複
               departMins = curEndMins;
               arriveMins = curEndMins;
               moveDuration = 0;
-            } else if (gap < setDuration) {
-              // ★ 終了時間と開始時間が近い場合: 随行終了時刻(curEndMins)から定点開始(nextStartMins)までのgap分間でピッタリ移動！
-              departMins = curEndMins;
-              arriveMins = nextStartMins;
-              moveDuration = gap;
-            } else {
-              // 十分な間隔がある場合: 随行終了時刻から設定移動時間(setDuration分)で移動
-              departMins = curEndMins;
-              arriveMins = curEndMins + setDuration;
-              moveDuration = setDuration;
             }
 
             // 移動期間中（departMins 〜 arriveMins）に移動マーカー・誘導破線を表示
